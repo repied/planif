@@ -18,6 +18,7 @@ const DEFAULT_STATE = {
   surfaceInterval: 60 * 3,
   ppo2Max: 1.6,
   surpenalisation: 'OFF',
+  reservePressureThreshold: 50,
 };
 
 // App State
@@ -40,6 +41,8 @@ const MAX_TIME = 60 * 2;
 const MIN_TIME = 0;
 const MAX_TANK_PRESSURE = 300;
 const MIN_TANK_PRESSURE = 50;
+const MIN_RESERVE_PRESSURE = 30;
+const MAX_RESERVE_PRESSURE = 100;
 const MAX_SAC = 40;
 const MIN_SAC = 10;
 const MAX_TANK_VOLUME = 30;
@@ -208,6 +211,7 @@ function cacheElements() {
     'saturation-table-container',
     'depth-warning',
     'depth-warning-2',
+    'pressure-warning',
     'help-modal',
     'help-link',
     'checklist-modal',
@@ -1067,6 +1071,139 @@ function updateDepthWarning(suffix = '') {
   }
 }
 
+function updatePressureWarning() {
+  const warningEl = el['pressure-warning'];
+  if (!warningEl) return;
+
+  const threshold = state.reservePressureThreshold;
+  const length = warningEl.getTotalLength();
+  const fraction = threshold / MAX_TANK_PRESSURE;
+  const dashLength = length * fraction;
+
+  warningEl.style.strokeDasharray = `${dashLength} ${length}`;
+  warningEl.style.strokeDashoffset = '0';
+  warningEl.style.visibility = 'visible';
+
+  setupPressureThresholdTick();
+}
+
+// Geometry constants matching updateGaugeTicks
+const GAUGE_CENTER_X = 60;
+const GAUGE_CENTER_Y = 60;
+const GAUGE_RADIUS = 50;
+const GAUGE_START_ANGLE = 2.2143;
+const GAUGE_SPAN_ANGLE = 4.996;
+
+function setupPressureThresholdTick() {
+  const container = el['pressure-gauge-container'];
+  if (!container) return;
+  const svg = container.querySelector('svg');
+  if (!svg) return;
+
+  const threshold = state.reservePressureThreshold;
+  const fraction = threshold / MAX_TANK_PRESSURE;
+  const angle = GAUGE_START_ANGLE + fraction * GAUGE_SPAN_ANGLE;
+
+  const r1 = GAUGE_RADIUS - 4;
+  const r2 = GAUGE_RADIUS + 4;
+  const x1 = GAUGE_CENTER_X + r1 * Math.cos(angle);
+  const y1 = GAUGE_CENTER_Y + r1 * Math.sin(angle);
+  const x2 = GAUGE_CENTER_X + r2 * Math.cos(angle);
+  const y2 = GAUGE_CENTER_Y + r2 * Math.sin(angle);
+
+  let tickGroup = svg.querySelector('.pressure-reserve-tick');
+  if (!tickGroup) {
+    tickGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    tickGroup.classList.add('pressure-reserve-tick');
+    svg.appendChild(tickGroup);
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.classList.add('tick-line');
+    line.setAttribute('stroke', '#ffa500');
+    line.setAttribute('stroke-width', '3');
+    line.setAttribute('stroke-linecap', 'round');
+    tickGroup.appendChild(line);
+
+    // Transparent hit area for easier grabbing
+    const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    hitArea.classList.add('tick-hit');
+    hitArea.setAttribute('r', '8');
+    hitArea.setAttribute('fill', 'transparent');
+    hitArea.setAttribute('stroke', 'none');
+    hitArea.setAttribute('cursor', 'ns-resize');
+    hitArea.setAttribute('style', 'touch-action: none;');
+    tickGroup.appendChild(hitArea);
+
+    setupPressureThresholdDrag(tickGroup, container);
+  }
+
+  // Update tick position
+  const line = tickGroup.querySelector('.tick-line');
+  if (line) {
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2);
+    line.setAttribute('y2', y2);
+  }
+  const hitArea = tickGroup.querySelector('.tick-hit');
+  if (hitArea) {
+    const cx = GAUGE_CENTER_X + GAUGE_RADIUS * Math.cos(angle);
+    const cy = GAUGE_CENTER_Y + GAUGE_RADIUS * Math.sin(angle);
+    hitArea.setAttribute('cx', cx);
+    hitArea.setAttribute('cy', cy);
+  }
+}
+
+function setupPressureThresholdDrag(tickGroup, gaugeContainer) {
+  let isDragging = false;
+  let startY = 0;
+  let startValue = 0;
+  let lastTapTime = 0;
+
+  tickGroup.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const currentTime = Date.now();
+    if (currentTime - lastTapTime < 300 && currentTime - lastTapTime > 0) {
+      // Double tap: reset to default
+      state.reservePressureThreshold = DEFAULT_STATE.reservePressureThreshold;
+      triggerUpdate();
+      lastTapTime = 0;
+      return;
+    }
+    lastTapTime = currentTime;
+
+    isDragging = true;
+    startY = e.clientY;
+    startValue = state.reservePressureThreshold;
+    tickGroup.setPointerCapture(e.pointerId);
+  });
+
+  tickGroup.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const deltaY = startY - e.clientY;
+    const sensitivity = 1; // this round is ok to keep
+    const change = Math.round(deltaY * sensitivity);
+    let newValue = startValue + change;
+    if (newValue < MIN_RESERVE_PRESSURE) newValue = MIN_RESERVE_PRESSURE;
+    if (newValue > MAX_RESERVE_PRESSURE) newValue = MAX_RESERVE_PRESSURE;
+    if (newValue !== state.reservePressureThreshold) {
+      state.reservePressureThreshold = newValue;
+      triggerUpdate();
+    }
+  });
+
+  tickGroup.addEventListener('pointerup', (e) => {
+    isDragging = false;
+    tickGroup.releasePointerCapture(e.pointerId);
+  });
+
+  tickGroup.addEventListener('pointercancel', () => {
+    isDragging = false;
+  });
+}
+
 function _updateUI_impl() {
   document.body.classList.toggle('gf-mode', state.isGFMode);
 
@@ -1110,6 +1247,7 @@ function _updateUI_impl() {
   updateGaugeVisuals('sac', state.sac, MAX_SAC);
   updateGaugeVisuals('volume', state.tankVolume, MAX_TANK_VOLUME);
   updateGaugeVisuals('o2', state.gazO2pct, MAX_O2_pct);
+  updatePressureWarning();
 
   if (el['gf-low-display']) {
     el['gf-low-display'].textContent = state.currentGFLow;
@@ -1410,7 +1548,10 @@ function renderDiveDetails(container, result, diveDepth, diveTime, tankP, ppo2) 
   const pressureLabel = trans[state.currentLang].pressure;
   const takeoffLabel = trans[state.currentLang].takeoffPressure;
   const reserveLabel = trans[state.currentLang].reserve;
-  const optimizeBtnLabel = trans[state.currentLang].optimizeBtn;
+  const optimizeBtnLabel = trans[state.currentLang].optimizeBtn.replace(
+    '{rpt}',
+    state.reservePressureThreshold
+  );
 
   const dtrHtml = `<div class="result-box important clickable dtr-box"><span class="result-label">${dtrLabel}</span><span class="result-value">${dtrFormatted}</span></div>`;
   const combinedGasHtml = `
@@ -1449,7 +1590,7 @@ function renderDiveDetails(container, result, diveDepth, diveTime, tankP, ppo2) 
   if (reserveBox) {
     if (remainingPressure < 0) {
       reserveBox.style.backgroundColor = '#e53935';
-    } else if (remainingPressure < RESERVE_PRESSURE_THRESHOLD) {
+    } else if (remainingPressure < state.reservePressureThreshold) {
       reserveBox.style.backgroundColor = '#ff9800';
     }
     reserveBox.onclick = () => showGasBreakdown(consoLiters, remainingPressure);
@@ -1488,7 +1629,7 @@ async function optimizeTimeForReserve(isDive2) {
         high = mid - 1;
       } else {
         const remainingPressure = parseInt(reserveBox.textContent);
-        if (remainingPressure >= RESERVE_PRESSURE_THRESHOLD) {
+        if (remainingPressure >= state.reservePressureThreshold) {
           best = mid;
           low = mid + 1; // Try to go longer
         } else {
@@ -1697,7 +1838,7 @@ function showGasBreakdown(consoLiters, remainingPressure) {
       warning.style.color = '#e53935';
       warning.innerHTML = `💀 ${trans.notEnoughGas.toUpperCase()} ! 💀`;
     }
-  } else if (remainingPressure < RESERVE_PRESSURE_THRESHOLD) {
+  } else if (remainingPressure < state.reservePressureThreshold) {
     if (warning) {
       warning.style.color = '#ff9800';
       warning.innerHTML = `⚠️ ${trans.notEnoughReserve} ⚠️`;
@@ -2663,6 +2804,7 @@ function loadStateFromLocalStorage() {
       'surfaceInterval',
       'ppo2Max',
       'surpenalisation',
+      'reservePressureThreshold',
     ];
     keys.forEach((key) => {
       if (parsed[key] !== undefined) {

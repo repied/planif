@@ -1,5 +1,3 @@
-const RESERVE_PRESSURE_THRESHOLD = 50;
-
 window.translations = {
   fr: {
     firstDive: 'Première plongée',
@@ -62,7 +60,7 @@ window.translations = {
       'Tensions (bar) avant et après l’interval de surface (IS). Le compartiment directeur est encadré en rouge, les compartiments pénalisés sont en jaune.',
     penalisationExplanation:
       'Avec la pénalité "C60" (loisir) ou "C120" (engagée), le dégazage des compartiments rapides est limité à celui du compartiment 60 ou 120 minutes. Source : <a href="./data/Worldivers-Computers-Repetitive-FR.pdf" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">A. Foret</a>.',
-    optimizeBtn: `Durée max pour > ${RESERVE_PRESSURE_THRESHOLD}bar`,
+    optimizeBtn: `Viser pression fin > {rpt} bar`,
     checklistTitle: 'Checklist',
     share: 'Partager',
     scan: 'Scanner',
@@ -138,7 +136,7 @@ window.translations = {
       'Tensions (bar) before and after Surface Interval (SI). Leading compartment is in red. Penalised compartment in yellow.',
     penalisationExplanation:
       'With "C60" (recreational) or "C120" (committed) penalty, the off-gassing of fast compartments is limited to that of the 60 or 120-minute compartment. Source: <a href="./data/Worldivers-Computers-Repetitive-FR.pdf" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">A. Foret</a>.',
-    optimizeBtn: `Max duration for >${RESERVE_PRESSURE_THRESHOLD}bar`,
+    optimizeBtn: `Target end pressure > {rpt} bar`,
     checklistTitle: 'Checklist',
     share: 'Share',
     scan: 'Scan',
