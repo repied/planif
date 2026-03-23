@@ -47,4 +47,4 @@ Installation directe depuis le navigateur (pas de PlayStore/AppStore) pour utili
 - Surpénalisation : [A. Foret](./data/Worldivers-Computers-Repetitive-FR.pdf)
 - Code : [source](https://github.com/repied/tables)
 - Contact : [pierreD](mailto:pierre.dangauthier+tables@gmail.com?subject=Tables%20app%20feedback)
-- Extra : [Checklist](#checklist)
+- Extra : [Checklist](#checklist), [plans vs subsurface](comp.html)
