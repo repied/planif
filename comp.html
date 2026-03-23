@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dive Plan Comparison: tables vs subsurface</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hiplot@0.1.33/dist/hiplot.bundle.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: #1e2130;
+        color: #ffffff;
+        margin: 0;
+        padding: 1.5rem;
+      }
+      h1 {
+        color: #e53935;
+        margin-bottom: 0.5rem;
+      }
+      h1 em {
+        color: #4caf50;
+        font-style: normal;
+      }
+      h2 {
+        color: #e0e0e0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 0.25rem;
+      }
+      a {
+        color: #2196f3;
+      }
+      .card {
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+      .file-row {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      label {
+        font-size: 0.9rem;
+        color: #e0e0e0;
+      }
+      input[type='file'] {
+        background: #3e4259;
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      button {
+        background: rgba(0, 0, 0, 0.4);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 6px 18px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: rgba(0, 0, 0, 0.6);
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      #status {
+        font-size: 0.9rem;
+        color: #4caf50;
+        margin-top: 0.5rem;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .stat-box {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 0.75rem 1rem;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .stat-label {
+        font-size: 0.75rem;
+        color: #e0e0e0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .stat-value {
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #4caf50;
+      }
+      .stat-unit {
+        font-size: 0.75rem;
+        color: #aaa;
+      }
+      .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5rem;
+      }
+      @media (max-width: 1000px) {
+        .charts-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .charts-row canvas {
+        max-height: 300px;
+      }
+      #hiplot-container {
+        width: 100%;
+        min-height: 600px;
+        border-radius: 15px;
+        background: #fff;
+      }
+      #results {
+        display: none;
+      }
+      .note {
+        font-size: 0.8rem;
+        color: #aaa;
+        margin-top: 0.4rem;
+      }
+      /* Dive detail viewer */
+      #diveDetailInput {
+        background: #3e4259;
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        padding: 0.4rem 0.6rem;
+        font-family: monospace;
+        font-size: 0.95rem;
+        width: 340px;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 1rem;
+      }
+      @media (max-width: 800px) {
+        .detail-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .detail-grid table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      .detail-grid th,
+      .detail-grid td {
+        padding: 0.3rem 0.6rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: right;
+      }
+      .detail-grid th {
+        background: rgba(0, 0, 0, 0.3);
+        color: #4caf50;
+      }
+      .detail-grid td {
+        color: #e0e0e0;
+      }
+      .detail-grid h3 {
+        color: #e53935;
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Dive Plan Comparison: <em>tables</em> vs <em>subsurface</em></h1>
+    <p style="color: #e0e0e0; margin-top: 0">
+      Compare TTS for many dives. CSV files generated by
+      <a href="./src/tools/generate_gf_plans.js">Tables</a> and
+      <a href=".https://github.com/repied/subsurface/blob/master/tests/divegenerate.cpp"
+        >C++/subsurface</a
+      >
+    </p>
+
+    <div class="card">
+      <div class="file-row">
+        <div>
+          <label for="tablesFile">tables CSV:</label><br />
+          <input type="file" id="tablesFile" accept=".csv" />
+        </div>
+        <div>
+          <label for="subsurfaceFile">subsurface CSV:</label><br />
+          <input type="file" id="subsurfaceFile" accept=".csv" />
+        </div>
+        <div style="margin-top: 1.2rem">
+          <button id="loadBtn" onclick="loadAndCompare()" disabled>Load &amp; Compare</button>
+        </div>
+      </div>
+      <div id="status">Auto-loading CSVs…</div>
+      <p class="note">
+        Both files must share the same column schema:<br />
+        <code
+          >dive_id, depth_m, bottom_time_min, o2_pct, gf_low, gf_high, total_runtime_min,
+          total_runtime_sec, tts_min, has_deco, first_ceiling_m, num_deco_stops, stop1_depth_m,
+          stop1_time_min, …</code
+        >
+      </p>
+    </div>
+
+    <div id="results">
+      <div class="card">
+        <h2>TTS Error Distribution (tables − subsurface)</h2>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="charts-row" style="margin-top: 1.25rem">
+          <div>
+            <canvas id="histCanvas"></canvas>
+          </div>
+          <div>
+            <canvas id="relHistCanvas"></canvas>
+          </div>
+          <div>
+            <canvas id="scatterCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>HiPlot — Parallel Coordinates (joined data)</h2>
+        <p class="note" style="margin-bottom: 0.75rem">
+          Lines coloured by tts_error. Drag on any axis to brush/filter; click axis label to
+          reorder.
+        </p>
+        <div id="hiplot-container"></div>
+      </div>
+
+      <div class="card">
+        <h2>Dive Detail Viewer</h2>
+        <p class="note" style="margin-bottom: 0.75rem">
+          Copy a <code>dive_key</code> from the HiPlot table above and paste it here to see the full
+          stop profile from both planners.
+        </p>
+        <div style="display: flex; gap: 0.75rem; align-items: center">
+          <input id="diveDetailInput" type="text" placeholder="e.g. 65/20/21/70/70" />
+          <button onclick="showDiveDetail()">Show</button>
+        </div>
+        <div id="diveDetailOutput"></div>
+      </div>
+    </div>
+
+    <script>
+      // ─── File inputs ────────────────────────────────────────────────────────────
+      let tablesData = null;
+      let subsurfaceData = null;
+      // Raw CSV row maps keyed by "depth/bt/o2/gfl/gfh"
+      let rawTablesMap = new Map();
+      let rawSubsurfaceMap = new Map();
+
+      function onFileInputChange() {
+        document.getElementById('loadBtn').disabled =
+          !document.getElementById('tablesFile').files.length ||
+          !document.getElementById('subsurfaceFile').files.length;
+      }
+      document.getElementById('tablesFile').addEventListener('change', onFileInputChange);
+      document.getElementById('subsurfaceFile').addEventListener('change', onFileInputChange);
+
+      // ─── CSV parser ──────────────────────────────────────────────────────────────
+      function parseCSV(text) {
+        const lines = text.trim().split(/\r?\n/);
+        const headers = lines[0].split(',');
+        return lines.slice(1).map((line) => {
+          const vals = line.split(',');
+          const obj = {};
+          headers.forEach((h, i) => {
+            const v = vals[i] === undefined ? '' : vals[i].trim();
+            obj[h] = v;
+          });
+          return obj;
+        });
+      }
+
+      function readFile(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target.result);
+          reader.onerror = reject;
+          reader.readAsText(file);
+        });
+      }
+
+      // ─── Main comparison ─────────────────────────────────────────────────────────
+      async function processCSVTexts(tablesText, subsurfaceText) {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = 'Parsing CSVs…';
+
+        const tablesRows = parseCSV(tablesText);
+        const subsurfaceRows = parseCSV(subsurfaceText);
+
+        statusEl.textContent = `Parsed ${tablesRows.length} tables rows and ${subsurfaceRows.length} subsurface rows. Joining…`;
+
+        // Build lookup for subsurface by (depth_m, bottom_time_min, o2_pct, gf_low, gf_high)
+        const subMap = new Map();
+        rawTablesMap = new Map();
+        rawSubsurfaceMap = new Map();
+        for (const row of subsurfaceRows) {
+          const key = `${row.depth_m}|${row.bottom_time_min}|${row.o2_pct}|${row.gf_low}|${row.gf_high}`;
+          subMap.set(key, row);
+          rawSubsurfaceMap.set(key.replace(/\|/g, '/'), row);
+        }
+
+        const joined = [];
+        for (const r of tablesRows) {
+          const key = `${r.depth_m}|${r.bottom_time_min}|${r.o2_pct}|${r.gf_low}|${r.gf_high}`;
+          const diveKey = key.replace(/\|/g, '/');
+          rawTablesMap.set(diveKey, r);
+          const s = subMap.get(key);
+          if (!s) continue;
+
+          const ttsTables = parseFloat(r.tts_min);
+          const ttsSub = parseFloat(s.tts_min);
+          if (isNaN(ttsTables) || isNaN(ttsSub)) continue;
+
+          joined.push({
+            dive_key: diveKey,
+            depth_m: +r.depth_m,
+            bottom_time_min: +r.bottom_time_min,
+            o2_pct: +r.o2_pct,
+            gf_low: +r.gf_low,
+            gf_high: +r.gf_high,
+            gf_order:
+              +r.gf_low < +r.gf_high ? 'lower' : +r.gf_low === +r.gf_high ? 'equal' : 'higher',
+            tts_tables: ttsTables,
+            tts_subsurface: ttsSub,
+            tts_error: +(ttsTables - ttsSub).toFixed(4),
+            tts_error_pct: ttsSub !== 0 ? +100 * ((ttsTables - ttsSub) / ttsSub).toFixed(5) : 0,
+            has_deco: r.has_deco,
+            first_ceiling_tables: parseFloat(r.first_ceiling_m) || 0,
+            num_deco_stops_tables: +r.num_deco_stops || 0,
+          });
+        }
+
+        if (joined.length === 0) {
+          statusEl.textContent =
+            '⚠ No matching rows found. Make sure both files use the same grid parameters.';
+          return;
+        }
+
+        statusEl.textContent = `Joined ${joined.length} matching rows. Rendering…`;
+        document.getElementById('results').style.display = 'block';
+
+        renderStats(joined);
+        renderHistogram(joined);
+        renderRelHistogram(joined);
+        renderScatter(joined);
+        renderHiPlot(joined);
+
+        statusEl.textContent = `✓ Done — ${joined.length} rows compared.`;
+      }
+
+      async function loadAndCompare() {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = 'Reading files…';
+        try {
+          const [tablesText, subsurfaceText] = await Promise.all([
+            readFile(document.getElementById('tablesFile').files[0]),
+            readFile(document.getElementById('subsurfaceFile').files[0]),
+          ]);
+          await processCSVTexts(tablesText, subsurfaceText);
+        } catch (err) {
+          statusEl.textContent = `Error: ${err.message}`;
+          console.error(err);
+        }
+      }
+
+      async function autoLoad() {
+        const statusEl = document.getElementById('status');
+        try {
+          const [r1, r2] = await Promise.all([
+            fetch('data/tables_plans.csv'),
+            fetch('data/subsurface_plans.csv'),
+          ]);
+          if (!r1.ok || !r2.ok) throw new Error('fetch failed');
+          const [tablesText, subsurfaceText] = await Promise.all([r1.text(), r2.text()]);
+          await processCSVTexts(tablesText, subsurfaceText);
+        } catch {
+          statusEl.textContent = 'Select both CSV files to begin.';
+        }
+      }
+
+      autoLoad();
+
+      // ─── Stats ───────────────────────────────────────────────────────────────────
+      function calcStats(values) {
+        const n = values.length;
+        const mean = values.reduce((a, b) => a + b, 0) / n;
+        const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
+        const std = Math.sqrt(variance);
+        const sorted = [...values].sort((a, b) => a - b);
+        const median =
+          n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)];
+        const rmse = Math.sqrt(values.reduce((a, b) => a + b ** 2, 0) / n);
+        return {
+          n,
+          mean,
+          std,
+          median,
+          rmse,
+          min: sorted[0],
+          max: sorted[n - 1],
+          p5: sorted[Math.floor(n * 0.05)],
+          p95: sorted[Math.floor(n * 0.95)],
+        };
+      }
+
+      function fmt(v, dec = 3) {
+        return isFinite(v) ? v.toFixed(dec) : '—';
+      }
+
+      function renderStats(joined) {
+        const errors = joined.map((r) => r.tts_error);
+        const st = calcStats(errors);
+        const statsEl = document.getElementById('statsGrid');
+        const items = [
+          ['N matched', st.n, ''],
+          ['Mean error', fmt(st.mean), 'min'],
+          ['Std dev', fmt(st.std), 'min'],
+          ['Median', fmt(st.median), 'min'],
+          ['RMSE', fmt(st.rmse), 'min'],
+          ['Min / Max', `${fmt(st.min)} / ${fmt(st.max)}`, 'min'],
+          ['P5 / P95', `${fmt(st.p5)} / ${fmt(st.p95)}`, 'min'],
+        ];
+        statsEl.innerHTML = items
+          .map(
+            ([label, val, unit]) => `
+        <div class="stat-box">
+          <div class="stat-label">${label}</div>
+          <div class="stat-value">${val}</div>
+          <div class="stat-unit">${unit}</div>
+        </div>`
+          )
+          .join('');
+      }
+
+      // ─── Histogram ───────────────────────────────────────────────────────────────
+      let histChart = null;
+      function renderHistogram(joined) {
+        const errors = joined.map((r) => r.tts_error);
+        const min = Math.min(...errors);
+        const max = Math.max(...errors);
+        const nBins = 60;
+        const binSize = (max - min) / nBins || 1;
+        const bins = Array(nBins).fill(0);
+        const labels = Array.from({ length: nBins }, (_, i) =>
+          (min + (i + 0.5) * binSize).toFixed(2)
+        );
+        for (const v of errors) {
+          const idx = Math.min(nBins - 1, Math.floor((v - min) / binSize));
+          bins[idx]++;
+        }
+        if (histChart) histChart.destroy();
+        const ctx = document.getElementById('histCanvas').getContext('2d');
+        histChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Count',
+                data: bins,
+                backgroundColor: 'rgba(76,175,80,0.5)',
+                borderColor: 'rgba(76,175,80,0.8)',
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: '#e0e0e0' } },
+              title: {
+                display: true,
+                text: 'TTS Error Histogram (min)',
+                color: '#e0e0e0',
+                font: { size: 13 },
+              },
+            },
+            scales: {
+              x: {
+                ticks: { color: '#ccc', maxTicksLimit: 12 },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                title: { display: true, text: 'Error (min)', color: '#ccc' },
+              },
+              y: {
+                type: 'logarithmic',
+                ticks: { color: '#ccc' },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                title: { display: true, text: 'Count (log)', color: '#ccc' },
+              },
+            },
+          },
+        });
+      }
+
+      // ─── Relative Error Histogram ────────────────────────────────────────────────
+      let relHistChart = null;
+      function renderRelHistogram(joined) {
+        const relErrors = joined
+          .filter((r) => r.tts_subsurface !== 0)
+          .map((r) => +((r.tts_tables - r.tts_subsurface) / r.tts_subsurface).toFixed(5));
+        const min = Math.min(...relErrors);
+        const max = Math.max(...relErrors);
+        const nBins = 60;
+        const binSize = (max - min) / nBins || 1;
+        const bins = Array(nBins).fill(0);
+        const labels = Array.from(
+          { length: nBins },
+          (_, i) => ((min + (i + 0.5) * binSize) * 100).toFixed(1) + '%'
+        );
+        for (const v of relErrors) {
+          const idx = Math.min(nBins - 1, Math.floor((v - min) / binSize));
+          bins[idx]++;
+        }
+        // compute stats for subtitle
+        const mean = relErrors.reduce((a, b) => a + b, 0) / relErrors.length;
+        const std = Math.sqrt(
+          relErrors.reduce((a, b) => a + (b - mean) ** 2, 0) / relErrors.length
+        );
+        if (relHistChart) relHistChart.destroy();
+        const ctx = document.getElementById('relHistCanvas').getContext('2d');
+        relHistChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Count',
+                data: bins,
+                backgroundColor: 'rgba(33,150,243,0.5)',
+                borderColor: 'rgba(33,150,243,0.8)',
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: '#e0e0e0' } },
+              title: {
+                display: true,
+                text: [
+                  'Relative TTS Error Histogram  (tts_tables − tts_sub) / tts_sub',
+                  `mean=${(mean * 100).toFixed(2)}%  std=${(std * 100).toFixed(2)}%  n=${relErrors.length}`,
+                ],
+                color: '#e0e0e0',
+                font: { size: 13 },
+              },
+            },
+            scales: {
+              x: {
+                ticks: { color: '#ccc', maxTicksLimit: 12 },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                title: { display: true, text: 'Relative error (%)', color: '#ccc' },
+              },
+              y: {
+                ticks: { color: '#ccc' },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                title: { display: true, text: 'Count', color: '#ccc' },
+              },
+            },
+          },
+        });
+      }
+
+      // ─── Scatter ─────────────────────────────────────────────────────────────────
+      let scatterChart = null;
+      function renderScatter(joined) {
+        const MAX_POINTS = 2000;
+        const sample =
+          joined.length > MAX_POINTS
+            ? joined.filter((_, i) => i % Math.ceil(joined.length / MAX_POINTS) === 0)
+            : joined;
+
+        const colorMap = { yes: 'rgba(229,57,53,0.5)', no: 'rgba(76,175,80,0.35)' };
+        const datasets = ['yes', 'no'].map((deco) => ({
+          label: `has_deco=${deco}`,
+          data: sample
+            .filter((r) => r.has_deco === deco)
+            .map((r) => ({ x: r.tts_subsurface, y: r.tts_tables })),
+          backgroundColor: colorMap[deco],
+          pointRadius: 2,
+        }));
+
+        // identity line range
+        const allTts = joined.flatMap((r) => [r.tts_tables, r.tts_subsurface]);
+        const ttsMin = Math.min(...allTts),
+          ttsMax = Math.max(...allTts);
+
+        if (scatterChart) scatterChart.destroy();
+        const ctx = document.getElementById('scatterCanvas').getContext('2d');
+        scatterChart = new Chart(ctx, {
+          type: 'scatter',
+          data: {
+            datasets: [
+              ...datasets,
+              {
+                label: 'Perfect agreement',
+                data: [
+                  { x: ttsMin, y: ttsMin },
+                  { x: ttsMax, y: ttsMax },
+                ],
+                type: 'line',
+                borderColor: 'rgba(255,220,80,0.8)',
+                borderWidth: 1.5,
+                pointRadius: 0,
+                fill: false,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: '#e0e0e0', boxWidth: 10 } },
+              title: {
+                display: true,
+                text: 'TTS: tables vs subsurface (min)',
+                color: '#e0e0e0',
+                font: { size: 13 },
+              },
+            },
+            scales: {
+              x: {
+                ticks: { color: '#ccc' },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                title: { display: true, text: 'subsurface TTS (min)', color: '#ccc' },
+              },
+              y: {
+                ticks: { color: '#ccc' },
+                grid: { color: 'rgba(255,255,255,0.08)' },
+                title: { display: true, text: 'tables TTS (min)', color: '#ccc' },
+              },
+            },
+          },
+        });
+      }
+
+      // ─── HiPlot ──────────────────────────────────────────────────────────────────
+      function renderHiPlot(joined) {
+        const container = document.getElementById('hiplot-container');
+        container.innerHTML = '';
+
+        if (typeof hiplot === 'undefined') {
+          container.innerHTML =
+            '<p style="color:#c33;padding:1rem">⚠ HiPlot library not loaded (CDN issue?)</p>';
+          return;
+        }
+
+        const fields = [
+          'dive_key',
+          'depth_m',
+          'bottom_time_min',
+          'o2_pct',
+          'gf_low',
+          'gf_high',
+          'gf_order',
+          'tts_tables',
+          'tts_subsurface',
+          'tts_error',
+          'tts_error_pct',
+          'has_deco',
+          'first_ceiling_m',
+        ];
+
+        // Build experiment object matching hiplot's internal format
+        // (Experiment class is not exported, so we construct it manually)
+        const experiment = {
+          datapoints: joined.map((row, i) => {
+            const values = {};
+            fields.forEach((f) => {
+              values[f] = f === 'first_ceiling_m' ? row.first_ceiling_tables : row[f];
+            });
+            return { uid: String(i), from_uid: null, values };
+          }),
+          parameters_definition: {},
+          display_data: {},
+        };
+
+        try {
+          hiplot.render(container, { experiment });
+        } catch (err) {
+          console.error('HiPlot render error:', err);
+          container.innerHTML =
+            '<p style="color:#c33;padding:1rem">⚠ HiPlot could not render: ' + err.message + '</p>';
+        }
+      }
+
+      // ─── Dive Detail Viewer ──────────────────────────────────────────────────────
+      function extractStops(row) {
+        const stops = [];
+        for (let i = 1; i <= 15; i++) {
+          const d = parseFloat(row[`stop${i}_depth_m`]);
+          const t = parseFloat(row[`stop${i}_time_min`]);
+          if (!isNaN(d) && !isNaN(t)) stops.push({ depth: d, time: t });
+        }
+        return stops;
+      }
+
+      function buildStopsTable(label, row) {
+        if (!row) return `<div><h3>${label}</h3><p style="color:#c33">No data found</p></div>`;
+        const stops = extractStops(row);
+        let html = `<div><h3>${label}</h3><table>`;
+        html += `<tr><th>Depth (m)</th><th>Bottom (min)</th><th>O₂%</th><th>GF low/high</th><th>TTS (min)</th><th>1st ceiling (m)</th><th>Deco stops</th></tr>`;
+        html += `<tr><td>${row.depth_m}</td><td>${row.bottom_time_min}</td><td>${row.o2_pct}</td><td>${row.gf_low}/${row.gf_high}</td><td>${row.tts_min}</td><td>${parseFloat(row.first_ceiling_m || 0).toFixed(1)}</td><td>${row.num_deco_stops || 0}</td></tr>`;
+        html += `</table>`;
+        if (stops.length > 0) {
+          html += `<table style="margin-top:0.5rem"><tr><th>Stop #</th><th>Depth (m)</th><th>Time (min)</th></tr>`;
+          stops.forEach((s, i) => {
+            html += `<tr><td>${i + 1}</td><td>${s.depth.toFixed(1)}</td><td>${s.time.toFixed(1)}</td></tr>`;
+          });
+          html += `</table>`;
+        } else {
+          html += `<p style="color:#4caf50;font-size:0.85rem;margin:0.4rem 0 0">No deco stops</p>`;
+        }
+        html += `</div>`;
+        return html;
+      }
+
+      function showDiveDetail() {
+        const key = document.getElementById('diveDetailInput').value.trim();
+        const out = document.getElementById('diveDetailOutput');
+        if (!key) {
+          out.innerHTML = '';
+          return;
+        }
+        const t = rawTablesMap.get(key);
+        const s = rawSubsurfaceMap.get(key);
+        if (!t && !s) {
+          out.innerHTML = `<p style="color:#c33;margin-top:1rem">No dive found for key <code>${key}</code>. Format: depth/bt/o2/gf_low/gf_high</p>`;
+          return;
+        }
+        out.innerHTML = `<div class="detail-grid">${buildStopsTable('Tables (JS planner)', t)}${buildStopsTable('Subsurface (C++)', s)}</div>`;
+      }
+
+      // Allow Enter key in input
+      document.getElementById('diveDetailInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') showDiveDetail();
+      });
+    </script>
+  </body>
+</html>

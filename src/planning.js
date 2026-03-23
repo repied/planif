@@ -202,6 +202,19 @@
       t_elapsed_bottom += step;
     }
 
+    // Compute Bühlmann first ceiling at gfLow (before any ascent, firstStopDepth is null)
+    let firstCeilingPressure = 0;
+    for (let i = 0; i < N_COMPARTMENTS; i++) {
+      const { A, B } = BUEHLMANN[i];
+      const denom = 1 - _gfLow + _gfLow / B;
+      const pCei = denom > 0 ? (tensions[i] - A * _gfLow) / denom : 0;
+      if (pCei > firstCeilingPressure) firstCeilingPressure = pCei;
+    }
+    const firstCeilingM = Math.max(
+      0,
+      ((firstCeilingPressure - surfacePressure) * 100000) / (WATER_DENSITY * GRAVITY)
+    );
+
     // 3. Ascent
     while (currentDepth >= lastStopDepth) {
       const remaining_to_laststop = currentDepth - lastStopDepth;
@@ -307,7 +320,12 @@
       else stopsObj[d] = t;
     });
     // format output for the app
-    return { profile: { stops: stopsObj }, finalTensions: Array.from(tensions), dtr: dtr_Buhlmann };
+    return {
+      profile: { stops: stopsObj },
+      finalTensions: Array.from(tensions),
+      dtr: dtr_Buhlmann,
+      firstCeilingM,
+    };
   }
   // --- END BUEHLMANN ---
 

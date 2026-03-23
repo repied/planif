@@ -2,10 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-////////////// PARAMETERS //////////////
-const num_samples = 5;
-////////////// PARAMETERS //////////////
-
 // Mock browser environment
 const sandbox = {
   console: console,
@@ -15,13 +11,12 @@ const sandbox = {
     getTable3: () => ({}),
   },
 };
-sandbox.window = sandbox; // Circular reference so 'window' refers to the global object
+sandbox.window = sandbox;
 
 // Load planning.js
-const planningPath = path.join(__dirname, 'planning.js');
+const planningPath = path.join(__dirname, '../planning.js');
 const planningCode = fs.readFileSync(planningPath, 'utf8');
 
-// Create context and run script
 try {
   vm.createContext(sandbox);
   vm.runInContext(planningCode, sandbox);
@@ -31,133 +26,118 @@ try {
 }
 
 const Planning = sandbox.Planning;
-
 if (!Planning) {
   console.error('Planning object not found in sandbox');
   process.exit(1);
 }
 
-// Parameters
-const scriptPath = path.join(__dirname, 'script.js');
-const scriptCode = fs.readFileSync(scriptPath, 'utf8');
+// Grid values matching C++ subsurface generator
+const depth_grid = [15, 18, 20, 25, 30, 35, 40, 45, 50, 55, 65];
+const bt_grid = [10, 15, 20, 30, 35, 40, 50, 60, 120];
+const o2_grid = [21, 32, 45];
+const gf_low_grid = [20, 30, 50, 70, 85, 90, 95, 99];
+const gf_high_grid = [50, 60, 70, 80, 85, 90, 95];
 
-function getConst(name) {
-  const match = scriptCode.match(new RegExp(`const\\s+${name}\\s*=\\s*([^;]+);`));
-  if (!match) throw new Error(`Constant ${name} not found in script.js`);
-  return eval(match[1]);
+// Build column headers: 12 fixed + up to 15 stop pairs
+const MAX_STOPS = 15;
+const stopHeaders = [];
+for (let i = 1; i <= MAX_STOPS; i++) {
+  stopHeaders.push(`stop${i}_depth_m`, `stop${i}_time_min`);
 }
-
-const MIN_DEPTH = getConst('MIN_DEPTH');
-const MAX_DEPTH = getConst('MAX_DEPTH');
-const MIN_TIME = getConst('MIN_TIME');
-const MAX_TIME = getConst('MAX_TIME');
-const MIN_O2 = getConst('MIN_O2_pct');
-const MAX_O2 = getConst('MAX_O2_pct');
-const MIN_GF = getConst('MIN_GF_pct');
-const MAX_GF = getConst('MAX_GF_pct');
-
-function linspace(start, end, num) {
-  if (!num) {
-    const arr = [];
-    for (let i = start; i <= end; i++) {
-      arr.push(i);
-    }
-    return arr;
-  }
-  const step = (end - start) / (num - 1);
-  const arr = [];
-  for (let i = 0; i < num; i++) {
-    arr.push(Math.round(start + step * i));
-  }
-  return arr;
-}
-
-const depths = linspace(MIN_DEPTH, MAX_DEPTH, num_samples);
-const durations = linspace(MIN_TIME, MAX_TIME, num_samples);
-const o2s = linspace(MIN_O2, MAX_O2, num_samples);
-const gfLows = linspace(MIN_GF, MAX_GF, num_samples);
-const gfHighs = linspace(MIN_GF, MAX_GF, num_samples);
-
 const headers = [
-  'mode',
-  'GF low',
-  'GF high',
-  'O2',
-  'depth',
-  'duration',
-  'TTS',
-  '3m',
-  '6m',
-  '9m',
-  '12m',
-  '15m',
-  'deeperstops',
+  'dive_id',
+  'depth_m',
+  'bottom_time_min',
+  'o2_pct',
+  'gf_low',
+  'gf_high',
+  'total_runtime_min',
+  'total_runtime_sec',
+  'tts_min',
+  'has_deco',
+  'first_ceiling_m',
+  'num_deco_stops',
+  ...stopHeaders,
 ];
 const rows = [headers.join(',')];
 
-const total = gfLows.length * gfHighs.length * o2s.length * depths.length * durations.length;
-const logInterval = Math.max(1, Math.floor(total / 10000)); // log ~100 times
-let count = 0;
+const total =
+  depth_grid.length * bt_grid.length * o2_grid.length * gf_low_grid.length * gf_high_grid.length;
+const logInterval = Math.max(1, Math.floor(total / 200));
+let dive_id = 0;
 const startTime = Date.now();
 
 console.log(`Generating ${total} dive plans...`);
-for (const gfLow of gfLows) {
-  for (const gfHigh of gfHighs) {
-    for (const o2 of o2s) {
-      for (const depth of depths) {
-        for (const duration of durations) {
-          const diveParams = {
-            bottomTime: duration,
+
+for (const depth of depth_grid) {
+  for (const bt of bt_grid) {
+    for (const o2 of o2_grid) {
+      for (const gfLow of gf_low_grid) {
+        for (const gfHigh of gf_high_grid) {
+          dive_id++;
+
+          const result = Planning.calculateBuhlmannPlan({
+            bottomTime: bt,
             maxDepth: depth,
-            gfLow: gfLow,
-            gfHigh: gfHigh,
-            fN2: (100 - o2) / 100,
-            surfacePressure: 1.01325,
-          };
-
-          const result = Planning.calculateBuhlmannPlan(diveParams);
-          const stops = result.profile.stops || {};
-          const dtr = result.dtr;
-
-          const stop3m = stops[3] || 0;
-          const stop6m = stops[6] || 0;
-          const stop9m = stops[9] || 0;
-          const stop12m = stops[12] || 0;
-          const stop15m = stops[15] || 0;
-
-          let deeperStops = 0;
-          Object.keys(stops).forEach((d) => {
-            const depthNum = Number(d);
-            if (depthNum > 15) {
-              deeperStops += stops[d];
-            }
-          });
-
-          const row = [
-            'GF',
             gfLow,
             gfHigh,
-            o2,
+            fN2: (100 - o2) / 100,
+            surfacePressure: 1.01325,
+            ascentRate: Planning.ASCENT_RATE_GF,
+          });
+
+          const stopsObj = result.profile.stops || {};
+          const dtr = result.dtr;
+          const firstCeilingM = result.firstCeilingM || 0;
+
+          // Sort stops deepest first
+          const stopEntries = Object.keys(stopsObj)
+            .map(Number)
+            .sort((a, b) => b - a)
+            .map((d) => ({ depth: d, time: stopsObj[d] }));
+
+          const hasDeco = stopEntries.length > 0 ? 'yes' : 'no';
+          const numDecoStops = stopEntries.length;
+
+          const totalRuntime = bt + dtr;
+          const total_runtime_min = Math.floor(totalRuntime);
+          const total_runtime_sec = Math.round(totalRuntime * 60);
+          const tts_min = +dtr.toFixed(5);
+
+          // Build stop columns (up to MAX_STOPS, pad empty with '')
+          const stopCols = [];
+          for (let i = 0; i < MAX_STOPS; i++) {
+            if (i < stopEntries.length) {
+              stopCols.push(+stopEntries[i].depth.toFixed(5), +stopEntries[i].time.toFixed(5));
+            } else {
+              stopCols.push('', '');
+            }
+          }
+
+          const row = [
+            dive_id,
             depth,
-            duration,
-            dtr,
-            stop3m,
-            stop6m,
-            stop9m,
-            stop12m,
-            stop15m,
-            deeperStops,
+            bt,
+            o2,
+            gfLow,
+            gfHigh,
+            total_runtime_min,
+            total_runtime_sec,
+            tts_min,
+            hasDeco,
+            +firstCeilingM.toFixed(5),
+            numDecoStops,
+            ...stopCols,
           ];
           rows.push(row.join(','));
-          count++;
 
-          if (count % logInterval === 0 || count === total) {
+          if (dive_id % logInterval === 0 || dive_id === total) {
             const elapsed = (Date.now() - startTime) / 1000;
-            const pct = ((count / total) * 100).toFixed(1);
-            const rate = count / (elapsed || 1);
-            const eta = ((total - count) / (rate || 1)).toFixed(1);
+            const pct = ((dive_id / total) * 100).toFixed(1);
+            const rate = dive_id / (elapsed || 1);
+            const eta = ((total - dive_id) / (rate || 1)).toFixed(1);
             console.log(
-              `[${pct}%] ${count}/${total} — GF ${gfLow}/${gfHigh} O2:${o2} D:${depth} T:${duration} — elapsed:${elapsed.toFixed(1)}s ETA:${eta}s`
+              `[${pct}%] ${dive_id}/${total} — D:${depth} BT:${bt} O2:${o2} GF:${gfLow}/${gfHigh} — elapsed:${elapsed.toFixed(1)}s ETA:${eta}s`
             );
           }
         }
@@ -166,5 +146,6 @@ for (const gfLow of gfLows) {
   }
 }
 
-fs.writeFileSync('./data/gf_dive_plans.csv', rows.join('\n'));
-console.log(`Generated ${count} dive plans in gf_dive_plans.csv`);
+const outPath = path.join(__dirname, '../../data/tables_plans.csv');
+fs.writeFileSync(outPath, rows.join('\n'));
+console.log(`Generated ${dive_id} dive plans → ${outPath}`);
