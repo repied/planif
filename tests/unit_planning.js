@@ -123,6 +123,18 @@ function assertEqual(actual, expected, message) {
   }
 }
 
+function assertClose(actual, expected, epsilon, message) {
+  if (Math.abs(actual - expected) <= epsilon) {
+    console.log(`✅ ${message}`);
+    passed++;
+  } else {
+    console.error(`❌ ${message}`);
+    console.error(`   Expected: ${expected} +/- ${epsilon}`);
+    console.error(`   Actual:   ${actual}`);
+    failed++;
+  }
+}
+
 console.log('--- Starting Unit Tests ---\n');
 
 // --- Tests ---
@@ -140,8 +152,8 @@ console.log('--- Starting Unit Tests ---\n');
   // Ascent 20->3 = 1.133
   // Stop = 4
   // Ascent 3->0 = 0.5
-  // Total = 5.633 -> ceil -> 6
-  assertEqual(dtr, 6, 'DTR should be 6 min');
+  // Total = 5.633 (no ceiling)
+  assertClose(dtr, 5.633333333333333, 1e-9, 'DTR should keep fractional minutes');
 }
 
 // Test 2: Gas Consumption
@@ -210,11 +222,14 @@ console.log('--- Starting Unit Tests ---\n');
   // With GF 30/70 it might trigger something small or safety stop logic isn't explicit but algo runs.
 }
 
-function check_dtr_single_dive(depth, time, expectedDTR) {
+function check_dtr_single_dive(depth, time, expectedDTRCeil) {
   const profile = Planning.getMN90Profile(depth, time);
   const dtr = Planning.calculateDTR(depth, profile.profile.stops, Planning.ASCENT_RATE_MN90);
   console.log(`DTR for ${depth}m ${time}min: ${dtr} min`);
-  assertEqual(dtr, expectedDTR, `DTR should be ${expectedDTR} min`);
+  assert(
+    dtr > expectedDTRCeil - 1 && dtr <= expectedDTRCeil,
+    `DTR should be in (${expectedDTRCeil - 1}, ${expectedDTRCeil}]`
+  );
 }
 function check_stops_single_dive(depth, time, expectedStops) {
   const profile = Planning.getMN90Profile(depth, time);
@@ -487,28 +502,24 @@ function check_successive_dive(group, interval, depth, expectedMaj) {
     });
 
     const dtr_Buhlmann = plan.dtr;
-    const dtr_ceiled = Planning.calculateDTR(depth, plan.profile.stops, Planning.ASCENT_RATE_GF);
+    const dtr_from_stops = Planning.calculateDTR(
+      depth,
+      plan.profile.stops,
+      Planning.ASCENT_RATE_GF
+    );
+    const EPSILON = 1e-5;
 
-    if (dtr_Buhlmann > dtr_ceiled) {
+    if (Math.abs(dtr_Buhlmann - dtr_from_stops) > EPSILON) {
       console.error(
-        `❌ Consistency check failed for ${depth}m ${time}min GF ${gfLow}/${gfHigh}. dtr_Buhlmann: ${dtr_Buhlmann} >  DTR ceiled: ${dtr_ceiled}`
+        `❌ Consistency check failed for ${depth}m ${time}min GF ${gfLow}/${gfHigh}. dtr_Buhlmann: ${dtr_Buhlmann} vs DTR from stops: ${dtr_from_stops}`
       );
       console.log(`Stops: ${JSON.stringify(plan.profile.stops)}`);
       failed++;
     } else {
-      let n_stops = Object.keys(plan.profile.stops).length;
-      if (dtr_Buhlmann < dtr_ceiled - 1 - n_stops) {
-        // ceiling will be done for ascent rates  + one time per stop
-        console.error(
-          `❌ Consistency check failed for ${depth}m ${time}min GF ${gfLow}/${gfHigh}. dtr_Buhlmann: ${dtr_Buhlmann} too small compared to DTR ceiled: ${dtr_ceiled}`
-        );
-        failed++;
-      } else {
-        console.log(
-          `✅ Consistency check passed for ${depth}m ${time}min GF ${gfLow}/${gfHigh}. dtr_Buhlmann: ${dtr_Buhlmann} <= DTR ceiled: ${dtr_ceiled}`
-        );
-        passed++;
-      }
+      console.log(
+        `✅ Consistency check passed for ${depth}m ${time}min GF ${gfLow}/${gfHigh}. dtr_Buhlmann: ${dtr_Buhlmann} ~= DTR from stops: ${dtr_from_stops}`
+      );
+      passed++;
     }
   }
 

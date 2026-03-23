@@ -291,11 +291,11 @@
       currentDepth = 0;
     }
 
-    // Convert stops to object
+    // Convert stops to object, summing times if multiple stops at the same depth, should not happen with current logic but just in case
     let stopsObj = {};
     stopsArr.forEach((s) => {
-      const d = Math.round(s.depth);
-      const t = Math.ceil(s.time);
+      const d = s.depth;
+      const t = s.time;
       if (stopsObj[d]) stopsObj[d] += t;
       else stopsObj[d] = t;
     });
@@ -393,13 +393,12 @@
       Object.values(breakdown.stops).reduce((a, b) => a + b, 0);
 
     return {
-      total: Math.ceil(totalGas),
+      total: totalGas,
       breakdown: breakdown,
     };
   }
 
   function calculateDTR(depth, stops, ascentRate) {
-    // Use ceiling for stops and ascent times (safer)
     const breakdown = calculateTimeBreakdown(depth, 0, { stops }, ascentRate);
     return breakdown.dtr;
   }
@@ -449,7 +448,7 @@
     });
 
     const totalStopTime = Object.values(stops).reduce((a, b) => a + b, 0);
-    const dtr = Math.ceil(t_ascent + totalStopTime);
+    const dtr = t_ascent + totalStopTime;
 
     return {
       maxDepth: depth,
@@ -459,7 +458,7 @@
       ascent: t_ascent,
       stops: stopBreakdown,
       dtr: dtr,
-      totalDuration: Math.ceil(t_descent + t_at_depth + t_ascent + totalStopTime),
+      totalDuration: t_descent + t_at_depth + t_ascent + totalStopTime,
       profilePoints: profilePoints,
     };
   }
