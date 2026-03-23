@@ -42,7 +42,7 @@
 
   const N_COMPARTMENTS = BUEHLMANN.length;
   const HALF_LIVES = BUEHLMANN.map((c) => c.t12);
-  const MAX_STOP_TIME_BEFORE_INFTY = 720;
+  const MAX_STOP_TIME_BEFORE_INFINITY = 720;
 
   // Optimized constants
   const COMPARTMENTS = BUEHLMANN.map((c) => {
@@ -202,30 +202,16 @@
       t_elapsed_bottom += step;
     }
 
-    // Compute Bühlmann first ceiling at gfLow (before any ascent, firstStopDepth is null)
-    let firstCeilingPressure = 0;
-    for (let i = 0; i < N_COMPARTMENTS; i++) {
-      const { A, B } = BUEHLMANN[i];
-      const denom = 1 - _gfLow + _gfLow / B;
-      const pCei = denom > 0 ? (tensions[i] - A * _gfLow) / denom : 0;
-      if (pCei > firstCeilingPressure) firstCeilingPressure = pCei;
-    }
-    const firstCeilingM = Math.max(
-      0,
-      ((firstCeilingPressure - surfacePressure) * 100000) / (WATER_DENSITY * GRAVITY)
-    );
-
     // 3. Ascent
     while (currentDepth >= lastStopDepth) {
-      const remaining_to_laststop = currentDepth - lastStopDepth;
-      const n_full_intervals = Math.floor((remaining_to_laststop - 0.00001) / stopInterval);
+      const remaining_to_last_stop = currentDepth - lastStopDepth;
+      const n_full_intervals = Math.floor((remaining_to_last_stop - 0.00001) / stopInterval);
       let nextDepth = lastStopDepth + stopInterval * n_full_intervals;
       if (currentDepth == lastStopDepth) {
         nextDepth = SURFACE_DEPTH;
       }
 
-      // Use slower ascent rate only after completing the first stop
-      // Ascent to first stop uses normal rate, ascent from first stop uses slower rate
+      // Use slower ascent rate only after the first ceiling has been hit
       let currentAscentRate = hasCompletedFirstStop ? ASCENT_RATE_FROM_FIRST_STOP : ascentRate;
       let t_ascend = (currentDepth - nextDepth) / currentAscentRate;
       const depth_ascend = (nextDepth + currentDepth) / 2;
@@ -242,12 +228,12 @@
         surfacePressure
       );
 
-      if (!isSafe) {
-        if (firstStopDepth === null) firstStopDepth = currentDepth;
-
-        // If we must stop, or if we hit the ceiling, the ascent from here (first stop) will be slow.
-        // We must recalculate the ascent time and next tensions using the slower rate.
-        // This ensures we check if we can leave the stop using the correct (slow) ascent speed.
+      // Step 1 – rate switch (first ceiling hit only).
+      // If the fast-rate ascent is unsafe and we haven't switched yet, permanently move to
+      // slow rate and re-evaluate. If slow rate is sufficient, no stop is needed here at all.
+      if (!isSafe && !hasCompletedFirstStop) {
+        firstStopDepth = currentDepth;
+        hasCompletedFirstStop = true;
         currentAscentRate = ASCENT_RATE_FROM_FIRST_STOP;
         t_ascend = (currentDepth - nextDepth) / currentAscentRate;
         tensions_next = updateAllTensions(tensions, PN2_ascend, t_ascend);
@@ -259,9 +245,14 @@
           _gfHigh,
           surfacePressure
         ));
+      }
 
-        let stopTime = 0;
+      // Step 2 – actual stop (only entered when unsafe even at the slow rate).
+      // stopTime is structurally guaranteed > 0 here.
+      if (!isSafe) {
+        if (firstStopDepth === null) firstStopDepth = currentDepth;
         const PN2_stop = depthToPalvN2(currentDepth, surfacePressure, gaz_fN2);
+        let stopTime = 0;
 
         while (!isSafe) {
           stopTime += timeStepAtStop;
@@ -269,7 +260,6 @@
           t_dive_total += timeStepAtStop;
           tensions = updateAllTensions(tensions, PN2_stop, timeStepAtStop);
 
-          // Check if nextDepth is safe now
           tensions_next = updateAllTensions(tensions, PN2_ascend, t_ascend);
           ({ isSafe } = simulAtDepth(
             nextDepth,
@@ -280,13 +270,9 @@
             surfacePressure
           ));
 
-          if (stopTime > MAX_STOP_TIME_BEFORE_INFTY) break;
+          if (stopTime > MAX_STOP_TIME_BEFORE_INFINITY) break;
         }
         stopsArr.push({ depth: currentDepth, time: stopTime });
-        // Mark that we've completed the first stop
-        if (!hasCompletedFirstStop && firstStopDepth === currentDepth) {
-          hasCompletedFirstStop = true;
-        }
       }
 
       // Ascend
@@ -311,20 +297,16 @@
       currentDepth = 0;
     }
 
-    // Convert stops to object, summing times if multiple stops at the same depth, should not happen with current logic but just in case
+    // Convert stops to object, summing times if multiple stops at the same depth (shouldn't happen but defensive)
     let stopsObj = {};
     stopsArr.forEach((s) => {
-      const d = s.depth;
-      const t = s.time;
-      if (stopsObj[d]) stopsObj[d] += t;
-      else stopsObj[d] = t;
+      stopsObj[s.depth] = (stopsObj[s.depth] || 0) + s.time;
     });
     // format output for the app
     return {
-      profile: { stops: stopsObj },
+      profile: { stops: stopsObj, firstStopDepth },
       finalTensions: Array.from(tensions),
       dtr: dtr_Buhlmann,
-      firstCeilingM,
     };
   }
   // --- END BUEHLMANN ---
@@ -390,12 +372,21 @@
     const stopDepths = Object.keys(stops)
       .map(Number)
       .sort((a, b) => b - a);
-    const firstTargetDepth = stopDepths.length > 0 ? stopDepths[0] : 0;
+    const firstRealStopDepth = stopDepths.length > 0 ? stopDepths[0] : 0;
+    // rateTransitionDepth: where ascent switches from fast → slow rate.
+    // For GF plans this is firstStopDepth (the ceiling hit, which may be shallower than firstRealStopDepth
+    // when a ceiling was hit without needing to wait). For MN90 it equals firstRealStopDepth.
+    const rateTransitionDepth =
+      profile && profile.firstStopDepth != null ? profile.firstStopDepth : firstRealStopDepth;
 
-    // Ascent from bottom to first target
-    if (depth > firstTargetDepth) {
-      const travelTime = (depth - firstTargetDepth) / ascentRate;
-      const avgPressure = (getP(depth) + getP(firstTargetDepth)) / 2;
+    if (depth > rateTransitionDepth) {
+      const travelTime = (depth - rateTransitionDepth) / ascentRate;
+      const avgPressure = (getP(depth) + getP(rateTransitionDepth)) / 2;
+      breakdown.ascent += travelTime * avgPressure * sac;
+    }
+    if (rateTransitionDepth > firstRealStopDepth) {
+      const travelTime = (rateTransitionDepth - firstRealStopDepth) / ASCENT_RATE_FROM_FIRST_STOP;
+      const avgPressure = (getP(rateTransitionDepth) + getP(firstRealStopDepth)) / 2;
       breakdown.ascent += travelTime * avgPressure * sac;
     }
 
@@ -423,8 +414,8 @@
     };
   }
 
-  function calculateDTR(depth, stops, ascentRate) {
-    const breakdown = calculateTimeBreakdown(depth, 0, { stops }, ascentRate);
+  function calculateDTR(depth, profile, ascentRate) {
+    const breakdown = calculateTimeBreakdown(depth, 0, profile, ascentRate);
     return breakdown.dtr;
   }
 
@@ -445,14 +436,23 @@
     profilePoints.push({ t: currentT, d: depth, phase: 'bottom' });
 
     let t_ascent = 0;
-    const firstTargetDepth = stopDepths.length > 0 ? stopDepths[0] : 0;
+    const firstRealStopDepth = stopDepths.length > 0 ? stopDepths[0] : 0;
+    const rateTransitionDepth =
+      profile && profile.firstStopDepth != null ? profile.firstStopDepth : firstRealStopDepth;
 
     let currentDepth = depth;
-    if (currentDepth > firstTargetDepth) {
-      const travelT = (currentDepth - firstTargetDepth) / ascentRate;
+    if (currentDepth > rateTransitionDepth) {
+      const travelT = (currentDepth - rateTransitionDepth) / ascentRate;
       t_ascent += travelT;
       currentT += travelT;
-      currentDepth = firstTargetDepth;
+      currentDepth = rateTransitionDepth;
+      profilePoints.push({ t: currentT, d: currentDepth, phase: 'travel' });
+    }
+    if (currentDepth > firstRealStopDepth) {
+      const travelT = (currentDepth - firstRealStopDepth) / ASCENT_RATE_FROM_FIRST_STOP;
+      t_ascent += travelT;
+      currentT += travelT;
+      currentDepth = firstRealStopDepth;
       profilePoints.push({ t: currentT, d: currentDepth, phase: 'travel' });
     }
 

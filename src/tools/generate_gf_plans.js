@@ -55,7 +55,6 @@ const headers = [
   'total_runtime_sec',
   'tts_min',
   'has_deco',
-  'first_ceiling_m',
   'num_deco_stops',
   ...stopHeaders,
 ];
@@ -88,7 +87,6 @@ for (const depth of depth_grid) {
 
           const stopsObj = result.profile.stops || {};
           const dtr = result.dtr;
-          const firstCeilingM = result.firstCeilingM || 0;
 
           // Sort stops deepest first
           const stopEntries = Object.keys(stopsObj)
@@ -125,7 +123,6 @@ for (const depth of depth_grid) {
             total_runtime_sec,
             tts_min,
             hasDeco,
-            +firstCeilingM.toFixed(5),
             numDecoStops,
             ...stopCols,
           ];
