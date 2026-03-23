@@ -50,6 +50,7 @@
     return {
       k: k,
       decayTimeStep: Math.exp(-k * BUEHLMANN_timeStep),
+      decayOneMinuteTimeStep: Math.exp(-k * 1),
       A: c.A,
       B: c.B,
     };
@@ -68,13 +69,18 @@
   //     return pn2 + (t0 - pn2) * Math.exp(-k * t);
   // }
 
-  function updateAllTensions(tensions, PN2, t) {
+  function updateAllTensions(tensions, PN2, delta_t) {
     const res = new Float64Array(N_COMPARTMENTS);
-    const isStandardStep = t === BUEHLMANN_timeStep;
 
     for (let i = 0; i < N_COMPARTMENTS; i++) {
       const comp = COMPARTMENTS[i];
-      const decay = isStandardStep ? comp.decayTimeStep : Math.exp(-comp.k * t);
+      if (delta_t === 1) {
+        decay = comp.decayOneMinuteTimeStep; // precomputed for the one-minute time step
+      } else if (delta_t === BUEHLMANN_timeStep) {
+        decay = comp.decayTimeStep; // precomputed for the standard time step
+      } else {
+        decay = Math.exp(-comp.k * delta_t);
+      }
       res[i] = PN2 + (tensions[i] - PN2) * decay;
     }
     return res;
@@ -131,6 +137,7 @@
       ascentRate,
       descentRate = DESCENT_RATE,
     } = diveParams;
+    const timeStepAtStop = 1; // stop times must be multiples of 1 min, no need to try to ascent in between full minutes.
     const surfaceTensions = new Float64Array(N_COMPARTMENTS).fill(SURFACE_AIR_ALV_PPN2);
 
     if (bottomTime <= 0 || maxDepth <= 0) {
@@ -244,10 +251,10 @@
         const PN2_stop = depthToPalvN2(currentDepth, surfacePressure, gaz_fN2);
 
         while (!isSafe) {
-          stopTime += timeStep;
-          dtr_Buhlmann += timeStep;
-          t_dive_total += timeStep;
-          tensions = updateAllTensions(tensions, PN2_stop, timeStep);
+          stopTime += timeStepAtStop;
+          dtr_Buhlmann += timeStepAtStop;
+          t_dive_total += timeStepAtStop;
+          tensions = updateAllTensions(tensions, PN2_stop, timeStepAtStop);
 
           // Check if nextDepth is safe now
           tensions_next = updateAllTensions(tensions, PN2_ascend, t_ascend);

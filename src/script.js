@@ -841,7 +841,7 @@ function showGaugeValueDropdown(gaugeElement, currentValue, setValue, min, max) 
     const item = document.createElement('div');
     item.className = 'gauge-dropdown-item';
     // For the interval and time gauges, display values as hh:mm for better readability
-    const displayText = baseKey === 'interval' || baseKey === 'time' ? formatTime(val) : val;
+    const displayText = baseKey === 'interval' || baseKey === 'time' ? formatTimeHHMMSS(val) : val;
     item.textContent = displayText;
     if (Math.abs(val - currentValue) < 0.1) {
       item.classList.add('selected');
@@ -916,13 +916,12 @@ function showGaugeValueDropdown(gaugeElement, currentValue, setValue, min, max) 
   }
 }
 
-function formatMinutesForStops(minutes) {
+function formatMinutesForStopsWith2Decimals(minutes) {
   // Round to 2 decimals for cleaner display
-  minutes_2decimals = Math.round(minutes * 100) / 100;
-  return minutes_2decimals;
+  return Math.round(minutes * 100) / 100;
 }
 
-function formatTime(minutes) {
+function formatTimeHHMMSS(minutes) {
   let totalSeconds = Math.max(0, minutes * 60);
   if (HIDE_SECONDS_IN_FORMAT) {
     totalSeconds = Math.ceil(totalSeconds / 60) * 60;
@@ -934,7 +933,7 @@ function formatTime(minutes) {
   return s === 0 ? base : `${base}:${s.toString().padStart(2, '0')}`;
 }
 
-function formatDurationHuman(minutes) {
+function formatTimeHuman(minutes) {
   const totalSeconds = minutes * 60;
   const h = Math.floor(totalSeconds / 3600);
   let m = Math.floor((totalSeconds % 3600) / 60);
@@ -997,14 +996,14 @@ function updateGaugeVisuals(type, value, max, isTime = false, suffix = '') {
 
   const displayEl = el[`${type}-display${suffix}`];
   if (displayEl) {
-    displayEl.textContent = isTime ? formatTime(value) : value;
+    displayEl.textContent = isTime ? formatTimeHHMMSS(value) : value;
   }
 
   // Update ARIA
   const containerEl = el[`${type}-gauge-container${suffix}`];
   if (containerEl) {
     containerEl.setAttribute('aria-valuenow', String(value));
-    containerEl.setAttribute('aria-valuetext', isTime ? formatTime(value) : String(value));
+    containerEl.setAttribute('aria-valuetext', isTime ? formatTimeHHMMSS(value) : String(value));
   }
 }
 
@@ -1279,7 +1278,7 @@ function _updateUI_impl() {
   }
 
   if (el['interval-display'])
-    el['interval-display'].textContent = formatTime(state.surfaceInterval);
+    el['interval-display'].textContent = formatTimeHHMMSS(state.surfaceInterval);
   if (el['interval-progress'])
     el['interval-progress'].style.strokeDashoffset =
       length * (1 - Math.min(state.surfaceInterval / MAX_INTERVAL, 1));
@@ -1355,7 +1354,7 @@ function renderStops(result, containerElement) {
     let visualContent = '';
     if (stops[d]) {
       stopEl.classList.add('active');
-      visualContent = `<div class="stop-time">${formatMinutesForStops(stops[d])}</div>`;
+      visualContent = `<div class="stop-time">${formatMinutesForStopsWith2Decimals(stops[d])}</div>`;
     } else {
       visualContent = `<div class="stop-dot"></div>`;
     }
@@ -1390,7 +1389,7 @@ function renderDiveDetails(container, result, diveDepth, diveTime, tankP, ppo2) 
     result.profile,
     ascentRate
   );
-  const dtrFormatted = formatTime(timeBreakdown.dtr);
+  const dtrFormatted = formatTimeHHMMSS(timeBreakdown.dtr);
 
   const consoLiters = Planning.calculateGasConsumptionLiters(
     diveDepth,
@@ -1828,7 +1827,7 @@ function showTimeBreakdown(timeBreakdown) {
     };
 
     drawTimeLabel(0, '0', 'start');
-    drawTimeLabel(maxT, formatDurationHuman(maxT), 'end');
+    drawTimeLabel(maxT, formatTimeHuman(maxT), 'end');
 
     chartContainer.appendChild(svg);
   }
@@ -1838,12 +1837,12 @@ function showTimeBreakdown(timeBreakdown) {
     li.style.marginBottom = '10px';
     const dotColor = color || 'transparent';
     const dot = `<span style="display:inline-block;width:10px;height:10px;background:${dotColor};border-radius:50%;margin-right:8px;"></span>`;
-    li.innerHTML = `${dot}<strong>${label}:</strong> ${formatDurationHuman(minutes)}`;
+    li.innerHTML = `${dot}<strong>${label}:</strong> ${formatTimeHuman(minutes)}`;
     parent.appendChild(li);
     return li;
   };
 
-  total.innerHTML = `${trans.total}: ${formatDurationHuman(timeBreakdown.totalDuration)}`;
+  total.innerHTML = `${trans.total}: ${formatTimeHuman(timeBreakdown.totalDuration)}`;
 
   if (timeBreakdown.descent > 0) addLine(trans.descent, timeBreakdown.descent, '#2196f3');
   if (timeBreakdown.bottom > 0) addLine(trans.bottom, timeBreakdown.bottom, '#4caf50');
@@ -1861,7 +1860,7 @@ function showTimeBreakdown(timeBreakdown) {
       const dot = `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:50%;margin-right:8px;"></span>`;
       const li = document.createElement('li');
       li.style.marginBottom = '5px';
-      li.innerHTML = `${dot}${trans.ascent}: ${formatDurationHuman(timeBreakdown.ascent)}`;
+      li.innerHTML = `${dot}${trans.ascent}: ${formatTimeHuman(timeBreakdown.ascent)}`;
       subList.appendChild(li);
     }
 
@@ -1874,7 +1873,7 @@ function showTimeBreakdown(timeBreakdown) {
         const dot = `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:50%;margin-right:8px;"></span>`;
         const li = document.createElement('li');
         li.style.marginBottom = '5px';
-        li.innerHTML = `${dot}${trans.stopAt} ${formatDepth(Number(d))}m: ${formatDurationHuman(
+        li.innerHTML = `${dot}${trans.stopAt} ${formatDepth(Number(d))}m: ${formatTimeHuman(
           timeBreakdown.stops[d]
         )}`;
         subList.appendChild(li);
