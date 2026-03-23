@@ -4,6 +4,8 @@ Bühlmann
 github
 Icone
 linspace
+Palv
+simul
 succ
 surpenalisation
 surpénalisation

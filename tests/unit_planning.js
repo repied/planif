@@ -147,7 +147,7 @@ console.log('--- Starting Unit Tests ---\n');
   assertEqual(profile.profile.group, 'I', 'Group should be I');
   assertEqual(profile.profile.stops['3'], 4, 'Should have 4 min stop at 3m');
 
-  const dtr = Planning.calculateDTR(20, profile.profile.stops, Planning.ASCENT_RATE_MN90);
+  const dtr = Planning.calculateDTR(20, profile.profile, Planning.ASCENT_RATE_MN90);
   // Calculation (verified):
   // Ascent 20->3 = 1.133
   // Stop = 4
@@ -224,7 +224,7 @@ console.log('--- Starting Unit Tests ---\n');
 
 function check_dtr_single_dive(depth, time, expectedDTRCeil) {
   const profile = Planning.getMN90Profile(depth, time);
-  const dtr = Planning.calculateDTR(depth, profile.profile.stops, Planning.ASCENT_RATE_MN90);
+  const dtr = Planning.calculateDTR(depth, profile.profile, Planning.ASCENT_RATE_MN90);
   console.log(`DTR for ${depth}m ${time}min: ${dtr} min`);
   assert(
     dtr > expectedDTRCeil - 1 && dtr <= expectedDTRCeil,
@@ -502,11 +502,7 @@ function check_successive_dive(group, interval, depth, expectedMaj) {
     });
 
     const dtr_Buhlmann = plan.dtr;
-    const dtr_from_stops = Planning.calculateDTR(
-      depth,
-      plan.profile.stops,
-      Planning.ASCENT_RATE_GF
-    );
+    const dtr_from_stops = Planning.calculateDTR(depth, plan.profile, Planning.ASCENT_RATE_GF);
     const EPSILON = 1e-5;
 
     if (Math.abs(dtr_Buhlmann - dtr_from_stops) > EPSILON) {

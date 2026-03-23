@@ -32,7 +32,7 @@ const state = {
 const el = {};
 
 // format
-const HIDE_SECONDS_IN_FORMAT = true; // Set to false to debug DTR and duration breakdown
+const CEIL_SECONDS_IN_FORMAT = true; // Set to false to debug DTR and duration breakdown
 
 // Constants
 const MAX_DEPTH = 65;
@@ -921,13 +921,13 @@ function showGaugeValueDropdown(gaugeElement, currentValue, setValue, min, max) 
 }
 
 function formatMinutesForStopsWith2Decimals(minutes) {
-  // Round to 2 decimals for cleaner display
+  // Round to 2 decimals for cleaner display but keep them so we can see if a stop is not a multiple of 1 minute
   return Math.round(minutes * 100) / 100;
 }
 
 function formatTimeHHMMSS(minutes) {
   let totalSeconds = Math.max(0, minutes * 60);
-  if (HIDE_SECONDS_IN_FORMAT) {
+  if (CEIL_SECONDS_IN_FORMAT) {
     totalSeconds = Math.ceil(totalSeconds / 60) * 60;
   }
   const h = Math.floor(totalSeconds / 3600);
@@ -942,9 +942,9 @@ function formatTimeHuman(minutes) {
   const h = Math.floor(totalSeconds / 3600);
   let m = Math.floor((totalSeconds % 3600) / 60);
   let s = Math.ceil(totalSeconds % 60); // this ceil is ok to keep
-  if (HIDE_SECONDS_IN_FORMAT) {
-    s = 0;
+  if (CEIL_SECONDS_IN_FORMAT) {
     m = s === 0 ? m : m + 1;
+    s = 0;
   }
   const trans = window.translations[state.currentLang];
   const sStr = s > 0 ? ` ${s} ${s > 1 ? trans.seconds : trans.second}` : '';
