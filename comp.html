@@ -182,6 +182,55 @@
         margin: 0 0 0.5rem 0;
         font-size: 1rem;
       }
+      /* Toggle switch */
+      .filter-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+      }
+      .filter-toggle label {
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #e0e0e0;
+      }
+      .toggle-switch {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        display: inline-block;
+      }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .toggle-switch .slider {
+        position: absolute;
+        inset: 0;
+        background: #3e4259;
+        border-radius: 22px;
+        transition: background 0.2s;
+        cursor: pointer;
+      }
+      .toggle-switch .slider::before {
+        content: '';
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        left: 3px;
+        bottom: 3px;
+        background: #ccc;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+      .toggle-switch input:checked + .slider {
+        background: #4caf50;
+      }
+      .toggle-switch input:checked + .slider::before {
+        transform: translateX(18px);
+        background: #fff;
+      }
     </style>
   </head>
   <body>
@@ -217,6 +266,19 @@
           stop1_time_min, …</code
         >
       </p>
+    </div>
+
+    <div class="card" id="filterCard" style="display: none">
+      <div class="filter-toggle">
+        <label class="toggle-switch">
+          <input type="checkbox" id="reasonableToggle" />
+          <span class="slider"></span>
+        </label>
+        <label for="reasonableToggle"
+          >Reasonable dives only (BT&lt;60min, TTS&lt;120min, GF low=high)</label
+        >
+        <span id="filterCount" style="color: #aaa; font-size: 0.8rem"></span>
+      </div>
     </div>
 
     <div id="results">
@@ -266,6 +328,8 @@
       // Raw CSV row maps keyed by "depth/bt/o2/gfl/gfh"
       let rawTablesMap = new Map();
       let rawSubsurfaceMap = new Map();
+      // Full joined data for re-filtering
+      let allJoined = [];
 
       function onFileInputChange() {
         document.getElementById('loadBtn').disabled =
@@ -358,15 +422,41 @@
 
         statusEl.textContent = `Joined ${joined.length} matching rows. Rendering…`;
         document.getElementById('results').style.display = 'block';
+        document.getElementById('filterCard').style.display = 'block';
 
-        renderStats(joined);
-        renderHistogram(joined);
-        renderRelHistogram(joined);
-        renderScatter(joined);
-        renderHiPlot(joined);
+        allJoined = joined;
+        renderAll(joined);
 
         statusEl.textContent = `✓ Done — ${joined.length} rows compared.`;
       }
+
+      function applyFilter(joined) {
+        if (!document.getElementById('reasonableToggle').checked) return joined;
+        return joined.filter(
+          (r) =>
+            r.bottom_time_min < 60 &&
+            r.tts_tables < 120 &&
+            r.tts_subsurface < 120 &&
+            r.gf_low === r.gf_high
+        );
+      }
+
+      function renderAll(joined) {
+        const filtered = applyFilter(joined);
+        const countEl = document.getElementById('filterCount');
+        countEl.textContent = document.getElementById('reasonableToggle').checked
+          ? `(${filtered.length} / ${joined.length} dives)`
+          : '';
+        renderStats(filtered);
+        renderHistogram(filtered);
+        renderRelHistogram(filtered);
+        renderScatter(filtered);
+        renderHiPlot(filtered);
+      }
+
+      document.getElementById('reasonableToggle').addEventListener('change', () => {
+        if (allJoined.length > 0) renderAll(allJoined);
+      });
 
       async function loadAndCompare() {
         const statusEl = document.getElementById('status');
