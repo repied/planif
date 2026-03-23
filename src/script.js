@@ -2708,7 +2708,8 @@ function applyParams(params) {
           state.surpenalisation = s === '1' ? 'C60' : s === '2' ? 'C120' : 'OFF';
         }
         if (decoded.length >= 16) {
-          state.reservePressureThreshold = parseInt(decoded[15]);
+          const rpt = parseInt(decoded[15], 10);
+          if (!isNaN(rpt)) state.reservePressureThreshold = rpt;
         }
         changed = true;
         compactSuccess = true;
