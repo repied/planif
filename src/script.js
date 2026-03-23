@@ -30,8 +30,10 @@ const state = {
 // UI Elements Cache
 const el = {};
 
-// Constants
+// format
+const HIDE_SECONDS_IN_FORMAT = false; // Set to false to debug DTR and duration breakdown
 
+// Constants
 const MAX_DEPTH = 65;
 const MIN_DEPTH = 1; // do not put 0, makes no sense
 const MAX_TIME = 60 * 2;
@@ -914,11 +916,20 @@ function showGaugeValueDropdown(gaugeElement, currentValue, setValue, min, max) 
   }
 }
 
+function formatMinutesForStops(minutes) {
+  // Round to 2 decimals for cleaner display
+  minutes_2decimals = Math.round(minutes * 100) / 100;
+  return minutes_2decimals;
+}
+
 function formatTime(minutes) {
-  const totalSeconds = Math.max(0, minutes * 60);
+  let totalSeconds = Math.max(0, minutes * 60);
+  if (HIDE_SECONDS_IN_FORMAT) {
+    totalSeconds = Math.ceil(totalSeconds / 60) * 60;
+  }
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
+  const s = Math.ceil(totalSeconds % 60); // this ceil is ok to keep
   const base = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   return s === 0 ? base : `${base}:${s.toString().padStart(2, '0')}`;
 }
@@ -926,8 +937,12 @@ function formatTime(minutes) {
 function formatDurationHuman(minutes) {
   const totalSeconds = minutes * 60;
   const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
+  let m = Math.floor((totalSeconds % 3600) / 60);
+  let s = Math.ceil(totalSeconds % 60); // this ceil is ok to keep
+  if (HIDE_SECONDS_IN_FORMAT) {
+    s = 0;
+    m = s === 0 ? m : m + 1;
+  }
   const trans = window.translations[state.currentLang];
   const sStr = s > 0 ? ` ${s} ${s > 1 ? trans.seconds : trans.second}` : '';
   if (h === 0 && m === 0) {
@@ -949,13 +964,11 @@ function formatDepth(depth) {
 }
 
 function formatBar(bar) {
-  const normalized = Number(bar.toFixed(2));
-  return String(normalized);
+  return Math.ceil(bar);
 }
 
 function formatLiters(liters) {
-  const normalized = Number(liters.toFixed(2));
-  return String(normalized);
+  return Math.ceil(liters);
 }
 
 function updateGaugeVisuals(type, value, max, isTime = false, suffix = '') {
@@ -1342,7 +1355,7 @@ function renderStops(result, containerElement) {
     let visualContent = '';
     if (stops[d]) {
       stopEl.classList.add('active');
-      visualContent = `<div class="stop-time">${stops[d]}</div>`;
+      visualContent = `<div class="stop-time">${formatMinutesForStops(stops[d])}</div>`;
     } else {
       visualContent = `<div class="stop-dot"></div>`;
     }
