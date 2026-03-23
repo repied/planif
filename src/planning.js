@@ -50,6 +50,7 @@
     return {
       k: k,
       decayTimeStep: Math.exp(-k * BUEHLMANN_timeStep),
+      decayOneMinuteTimeStep: Math.exp(-k * 1),
       A: c.A,
       B: c.B,
     };
@@ -68,13 +69,18 @@
   //     return pn2 + (t0 - pn2) * Math.exp(-k * t);
   // }
 
-  function updateAllTensions(tensions, PN2, t) {
+  function updateAllTensions(tensions, PN2, delta_t) {
     const res = new Float64Array(N_COMPARTMENTS);
-    const isStandardStep = t === BUEHLMANN_timeStep;
 
     for (let i = 0; i < N_COMPARTMENTS; i++) {
       const comp = COMPARTMENTS[i];
-      const decay = isStandardStep ? comp.decayTimeStep : Math.exp(-comp.k * t);
+      if (delta_t === 1) {
+        decay = comp.decayOneMinuteTimeStep; // precomputed for the one-minute time step
+      } else if (delta_t === BUEHLMANN_timeStep) {
+        decay = comp.decayTimeStep; // precomputed for the standard time step
+      } else {
+        decay = Math.exp(-comp.k * delta_t);
+      }
       res[i] = PN2 + (tensions[i] - PN2) * decay;
     }
     return res;
@@ -131,6 +137,7 @@
       ascentRate,
       descentRate = DESCENT_RATE,
     } = diveParams;
+    const timeStepAtStop = 1; // stop times must be multiples of 1 min, no need to try to ascent in between full minutes.
     const surfaceTensions = new Float64Array(N_COMPARTMENTS).fill(SURFACE_AIR_ALV_PPN2);
 
     if (bottomTime <= 0 || maxDepth <= 0) {
@@ -244,10 +251,10 @@
         const PN2_stop = depthToPalvN2(currentDepth, surfacePressure, gaz_fN2);
 
         while (!isSafe) {
-          stopTime += timeStep;
-          dtr_Buhlmann += timeStep;
-          t_dive_total += timeStep;
-          tensions = updateAllTensions(tensions, PN2_stop, timeStep);
+          stopTime += timeStepAtStop;
+          dtr_Buhlmann += timeStepAtStop;
+          t_dive_total += timeStepAtStop;
+          tensions = updateAllTensions(tensions, PN2_stop, timeStepAtStop);
 
           // Check if nextDepth is safe now
           tensions_next = updateAllTensions(tensions, PN2_ascend, t_ascend);
@@ -291,11 +298,11 @@
       currentDepth = 0;
     }
 
-    // Convert stops to object
+    // Convert stops to object, summing times if multiple stops at the same depth, should not happen with current logic but just in case
     let stopsObj = {};
     stopsArr.forEach((s) => {
-      const d = Math.round(s.depth);
-      const t = Math.ceil(s.time);
+      const d = s.depth;
+      const t = s.time;
       if (stopsObj[d]) stopsObj[d] += t;
       else stopsObj[d] = t;
     });
@@ -393,13 +400,12 @@
       Object.values(breakdown.stops).reduce((a, b) => a + b, 0);
 
     return {
-      total: Math.ceil(totalGas),
+      total: totalGas,
       breakdown: breakdown,
     };
   }
 
   function calculateDTR(depth, stops, ascentRate) {
-    // Use ceiling for stops and ascent times (safer)
     const breakdown = calculateTimeBreakdown(depth, 0, { stops }, ascentRate);
     return breakdown.dtr;
   }
@@ -449,7 +455,7 @@
     });
 
     const totalStopTime = Object.values(stops).reduce((a, b) => a + b, 0);
-    const dtr = Math.ceil(t_ascent + totalStopTime);
+    const dtr = t_ascent + totalStopTime;
 
     return {
       maxDepth: depth,
@@ -459,7 +465,7 @@
       ascent: t_ascent,
       stops: stopBreakdown,
       dtr: dtr,
-      totalDuration: Math.ceil(t_descent + t_at_depth + t_ascent + totalStopTime),
+      totalDuration: t_descent + t_at_depth + t_ascent + totalStopTime,
       profilePoints: profilePoints,
     };
   }

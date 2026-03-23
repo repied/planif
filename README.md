@@ -4,14 +4,14 @@
 
 # Usage
 
-- Visit [https://repied.github.io/tables](https://repied.github.io/tables).
-- Set parameters to plan 2 successive dives.
+- Visit [https://repied.github.io/tables](https://repied.github.io/tables) to use or install the app.
+- Set parameters for 2 successive dives.
 - The app computes plans and checks gaz usage.
 - Plans can be shared with QR code and link.
 
 # Installation
 
-PWA can be installed on mobile/laptop/desktop and used offline. Direct installation from the browsers (no PlayStore, no AppStore).
+`Tables` can be installed on mobile/laptop/desktop and used offline. Direct installation from the browsers (no PlayStore, no AppStore).
 
 - **Android/Desktop**: Use the install button in app, or the install prompt or "+" icon in the address bar.
 - **iOS**: In browser, tap Share -> "Add to Home Screen".

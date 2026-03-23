@@ -30,8 +30,10 @@ const state = {
 // UI Elements Cache
 const el = {};
 
-// Constants
+// format
+const HIDE_SECONDS_IN_FORMAT = true; // Set to false to debug DTR and duration breakdown
 
+// Constants
 const MAX_DEPTH = 65;
 const MIN_DEPTH = 1; // do not put 0, makes no sense
 const MAX_TIME = 60 * 2;
@@ -583,7 +585,7 @@ function updateSaturationTable(
     row.appendChild(cellComp);
 
     const cellHalfLife = document.createElement('td');
-    cellHalfLife.textContent = Math.round(halfLives[i]);
+    cellHalfLife.textContent = Math.round(halfLives[i]); // this round is ok to keep
     row.appendChild(cellHalfLife);
 
     const cellBefore = document.createElement('td');
@@ -722,7 +724,7 @@ function setupGaugeInteraction(
 
     if (hasMoved) {
       const deltaY = startY - e.clientY;
-      const change = Math.round(deltaY * sensitivity);
+      const change = Math.round(deltaY * sensitivity); // this round is ok to keep
       let newValue = startValue + change;
       const currentMin = getMin();
       const currentMax = getMax();
@@ -762,7 +764,7 @@ function setupGaugeInteraction(
   // Keyboard interaction for accessibility
   gaugeElement.addEventListener('keydown', (e) => {
     const cur = getValue();
-    const step = sensitivity >= 1 ? Math.round(sensitivity) : sensitivity > 0 ? 0.5 : 1;
+    const step = sensitivity >= 1 ? Math.round(sensitivity) : sensitivity > 0 ? 0.5 : 1; // this round is ok to keep
     const map = {
       ArrowUp: cur + step,
       ArrowRight: cur + step,
@@ -839,7 +841,7 @@ function showGaugeValueDropdown(gaugeElement, currentValue, setValue, min, max) 
     const item = document.createElement('div');
     item.className = 'gauge-dropdown-item';
     // For the interval and time gauges, display values as hh:mm for better readability
-    const displayText = baseKey === 'interval' || baseKey === 'time' ? formatTime(val) : val;
+    const displayText = baseKey === 'interval' || baseKey === 'time' ? formatTimeHHMMSS(val) : val;
     item.textContent = displayText;
     if (Math.abs(val - currentValue) < 0.1) {
       item.classList.add('selected');
@@ -914,24 +916,58 @@ function showGaugeValueDropdown(gaugeElement, currentValue, setValue, min, max) 
   }
 }
 
-function formatTime(minutes) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+function formatMinutesForStopsWith2Decimals(minutes) {
+  // Round to 2 decimals for cleaner display
+  return Math.round(minutes * 100) / 100;
 }
 
-function formatDurationHuman(minutes) {
-  const h = Math.floor(minutes / 60);
-  const m = Math.round(minutes % 60);
+function formatTimeHHMMSS(minutes) {
+  let totalSeconds = Math.max(0, minutes * 60);
+  if (HIDE_SECONDS_IN_FORMAT) {
+    totalSeconds = Math.ceil(totalSeconds / 60) * 60;
+  }
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.ceil(totalSeconds % 60); // this ceil is ok to keep
+  const base = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  return s === 0 ? base : `${base}:${s.toString().padStart(2, '0')}`;
+}
+
+function formatTimeHuman(minutes) {
+  const totalSeconds = minutes * 60;
+  const h = Math.floor(totalSeconds / 3600);
+  let m = Math.floor((totalSeconds % 3600) / 60);
+  let s = Math.ceil(totalSeconds % 60); // this ceil is ok to keep
+  if (HIDE_SECONDS_IN_FORMAT) {
+    s = 0;
+    m = s === 0 ? m : m + 1;
+  }
   const trans = window.translations[state.currentLang];
+  const sStr = s > 0 ? ` ${s} ${s > 1 ? trans.seconds : trans.second}` : '';
+  if (h === 0 && m === 0) {
+    return `${s} ${s > 1 ? trans.seconds : trans.second}`;
+  }
   if (h === 0) {
-    return `${m} ${m > 1 ? trans.minutes : trans.minute}`;
+    return `${m} ${m > 1 ? trans.minutes : trans.minute}${sStr}`;
   }
   const hStr = h === 1 ? trans.hour : trans.hours;
   if (m === 0) {
-    return `${h} ${hStr}`;
+    return `${h} ${hStr}${sStr}`;
   }
-  return `${h} ${hStr} ${m} ${m > 1 ? trans.minutes : trans.minute}`;
+  return `${h} ${hStr} ${m} ${m > 1 ? trans.minutes : trans.minute}${sStr}`;
+}
+
+function formatDepth(depth) {
+  const normalized = Number(depth.toFixed(2));
+  return String(normalized);
+}
+
+function formatBar(bar) {
+  return Math.ceil(bar);
+}
+
+function formatLiters(liters) {
+  return Math.ceil(liters);
 }
 
 function updateGaugeVisuals(type, value, max, isTime = false, suffix = '') {
@@ -960,14 +996,14 @@ function updateGaugeVisuals(type, value, max, isTime = false, suffix = '') {
 
   const displayEl = el[`${type}-display${suffix}`];
   if (displayEl) {
-    displayEl.textContent = isTime ? formatTime(value) : value;
+    displayEl.textContent = isTime ? formatTimeHHMMSS(value) : value;
   }
 
   // Update ARIA
   const containerEl = el[`${type}-gauge-container${suffix}`];
   if (containerEl) {
     containerEl.setAttribute('aria-valuenow', String(value));
-    containerEl.setAttribute('aria-valuetext', isTime ? formatTime(value) : String(value));
+    containerEl.setAttribute('aria-valuetext', isTime ? formatTimeHHMMSS(value) : String(value));
   }
 }
 
@@ -1227,7 +1263,7 @@ function _updateUI_impl() {
         majText = `+${currentMajoration} min`;
         if (el['majoration-text']) {
           const trans = window.translations[state.currentLang];
-          const gpsLabel = prevGroup ? ` ${trans.gps.toLowerCase()} ${prevGroup}` : '';
+          const gpsLabel = prevGroup ? ` ${trans.gps.toUpperCase()} ${prevGroup}` : '';
           el['majoration-text'].textContent = `${trans.majoration}${gpsLabel}: ${majText}`;
           el['majoration-text'].style.display = 'inline';
         }
@@ -1242,7 +1278,7 @@ function _updateUI_impl() {
   }
 
   if (el['interval-display'])
-    el['interval-display'].textContent = formatTime(state.surfaceInterval);
+    el['interval-display'].textContent = formatTimeHHMMSS(state.surfaceInterval);
   if (el['interval-progress'])
     el['interval-progress'].style.strokeDashoffset =
       length * (1 - Math.min(state.surfaceInterval / MAX_INTERVAL, 1));
@@ -1298,7 +1334,7 @@ function renderStops(result, containerElement) {
   const stopDepths = Object.keys(stops).map(Number);
   const maxStopDepth = stopDepths.length > 0 ? Math.max(...stopDepths) : 0;
   // Default max is 15m, but if we have deeper stops, use the deepest stop (rounded to 3m)
-  const maxDisplayDepth = Math.max(15, Math.ceil(maxStopDepth / 3) * 3);
+  const maxDisplayDepth = Math.max(15, Math.ceil(maxStopDepth / 3) * 3); // this ceil is ok to keep
 
   const depths = [];
   for (let d = maxDisplayDepth; d >= 3; d -= 3) {
@@ -1318,7 +1354,7 @@ function renderStops(result, containerElement) {
     let visualContent = '';
     if (stops[d]) {
       stopEl.classList.add('active');
-      visualContent = `<div class="stop-time">${stops[d]}</div>`;
+      visualContent = `<div class="stop-time">${formatMinutesForStopsWith2Decimals(stops[d])}</div>`;
     } else {
       visualContent = `<div class="stop-dot"></div>`;
     }
@@ -1326,7 +1362,7 @@ function renderStops(result, containerElement) {
     const lineHeight = d * 5;
 
     stopEl.innerHTML = `
-            <div class="stop-depth">${d}${maxStopDepth >= 30 ? '' : 'm'}</div>
+            <div class="stop-depth">${formatDepth(d)}${maxStopDepth >= 30 ? '' : 'm'}</div>
             <div class="stop-line" style="height: ${lineHeight}px"></div>
             <div class="stop-value-container">
                 ${visualContent}
@@ -1353,7 +1389,7 @@ function renderDiveDetails(container, result, diveDepth, diveTime, tankP, ppo2) 
     result.profile,
     ascentRate
   );
-  const dtrFormatted = formatTime(timeBreakdown.dtr);
+  const dtrFormatted = formatTimeHHMMSS(timeBreakdown.dtr);
 
   const consoLiters = Planning.calculateGasConsumptionLiters(
     diveDepth,
@@ -1430,7 +1466,7 @@ async function optimizeTimeForReserve(isDive2) {
 
   try {
     const depth = isDive2 ? state.dive2Depth : state.dive1Depth;
-    let low = Math.ceil(depth / window.Planning.DESCENT_RATE);
+    let low = Math.floor(depth / window.Planning.DESCENT_RATE);
     let high = MAX_TIME;
     let best = low;
 
@@ -1488,22 +1524,22 @@ function showGasBreakdown(consoLiters, remainingPressure) {
   total.style.color = '';
 
   const addLine = (label, liters, color, parent = list) => {
-    const bar = Math.ceil(liters / state.tankVolume);
+    const bar = liters / state.tankVolume;
     const li = document.createElement('li');
     li.style.marginBottom = '10px';
     const dotColor = color || 'transparent';
     const dot = `<span style="display:inline-block;width:10px;height:10px;background:${dotColor};border-radius:50%;margin-right:8px;"></span>`;
-    li.innerHTML = `${dot}<strong>${label}:</strong> ${bar} bar 	&ndash; <small><i>${Math.round(liters)} L</i></small>`;
+    li.innerHTML = `${dot}<strong>${label}:</strong> ${formatBar(bar)} bar 	&ndash; <small><i>${formatLiters(liters)} L</i></small>`;
     parent.appendChild(li);
     return li;
   };
 
-  const bar_total = Math.ceil(consoLiters.total / state.tankVolume);
-  total.innerHTML = `${trans.total}: ${bar_total} bar 	&ndash; <small><i>${Math.round(consoLiters.total)} L</i></small>`;
+  const bar_total = consoLiters.total / state.tankVolume;
+  total.innerHTML = `${trans.total}: ${formatBar(bar_total)} bar 	&ndash; <small><i>${formatLiters(consoLiters.total)} L</i></small>`;
 
   if (el['gas-breakdown-tank']) {
     el['gas-breakdown-tank'].innerHTML =
-      `<strong>${trans.tank}:</strong> ${state.tankVolume}L @ ${state.initTankPressure} bar 	&ndash; <small><i>${state.tankVolume * state.initTankPressure} L</i></small>`;
+      `<strong>${trans.tank}:</strong> ${state.tankVolume}L @ ${state.initTankPressure} bar 	&ndash; <small><i>${formatLiters(state.tankVolume * state.initTankPressure)} L</i></small>`;
   }
 
   let stopsGas = 0;
@@ -1523,7 +1559,7 @@ function showGasBreakdown(consoLiters, remainingPressure) {
     tankContainer.style.marginBottom = '20px';
 
     const barTotal = consoLiters.total / state.tankVolume;
-    const numTanks = Math.max(1, Math.ceil(barTotal / state.initTankPressure));
+    const numTanks = Math.max(1, Math.ceil(barTotal / state.initTankPressure)); // this ceil is ok to keep
 
     const layers = [
       { bar: breakdown.descent / state.tankVolume, color: '#2196f3' },
@@ -1634,7 +1670,7 @@ function showGasBreakdown(consoLiters, remainingPressure) {
       const dot = `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:50%;margin-right:8px;"></span>`;
       const li = document.createElement('li');
       li.style.marginBottom = '5px';
-      li.innerHTML = `${dot}${trans.ascent}: ${Math.ceil(breakdown.ascent / state.tankVolume)} bar 	&ndash; <small><i>${Math.round(breakdown.ascent)} L</i></small>`;
+      li.innerHTML = `${dot}${trans.ascent}: ${formatBar(breakdown.ascent / state.tankVolume)} bar 	&ndash; <small><i>${formatLiters(breakdown.ascent)} L</i></small>`;
       subList.appendChild(li);
     }
 
@@ -1649,7 +1685,7 @@ function showGasBreakdown(consoLiters, remainingPressure) {
           const dot = `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:50%;margin-right:8px;"></span>`;
           const li = document.createElement('li');
           li.style.marginBottom = '5px';
-          li.innerHTML = `${dot}${trans.stopAt} ${d}m: ${Math.ceil(gasAtStop / state.tankVolume)} bar 	&ndash; <small><i>${Math.round(gasAtStop)} L</i></small>`;
+          li.innerHTML = `${dot}${trans.stopAt} ${d}m: ${formatBar(gasAtStop / state.tankVolume)} bar 	&ndash; <small><i>${formatLiters(gasAtStop)} L</i></small>`;
           subList.appendChild(li);
         }
       });
@@ -1766,7 +1802,7 @@ function showTimeBreakdown(timeBreakdown) {
       svg.appendChild(textEl);
     };
 
-    drawLabel(timeBreakdown.descent + timeBreakdown.bottom / 2, maxD, `${Math.round(maxD)}m`);
+    drawLabel(timeBreakdown.descent + timeBreakdown.bottom / 2, maxD, `${formatDepth(maxD)}m`);
 
     if (timeBreakdown.stops) {
       for (const d of Object.keys(timeBreakdown.stops)) {
@@ -1791,7 +1827,7 @@ function showTimeBreakdown(timeBreakdown) {
     };
 
     drawTimeLabel(0, '0', 'start');
-    drawTimeLabel(maxT, formatDurationHuman(Math.ceil(maxT)), 'end');
+    drawTimeLabel(maxT, formatTimeHuman(maxT), 'end');
 
     chartContainer.appendChild(svg);
   }
@@ -1801,12 +1837,12 @@ function showTimeBreakdown(timeBreakdown) {
     li.style.marginBottom = '10px';
     const dotColor = color || 'transparent';
     const dot = `<span style="display:inline-block;width:10px;height:10px;background:${dotColor};border-radius:50%;margin-right:8px;"></span>`;
-    li.innerHTML = `${dot}<strong>${label}:</strong> ${formatDurationHuman(Math.ceil(minutes))}`;
+    li.innerHTML = `${dot}<strong>${label}:</strong> ${formatTimeHuman(minutes)}`;
     parent.appendChild(li);
     return li;
   };
 
-  total.innerHTML = `${trans.total}: ${formatDurationHuman(Math.ceil(timeBreakdown.totalDuration))}`;
+  total.innerHTML = `${trans.total}: ${formatTimeHuman(timeBreakdown.totalDuration)}`;
 
   if (timeBreakdown.descent > 0) addLine(trans.descent, timeBreakdown.descent, '#2196f3');
   if (timeBreakdown.bottom > 0) addLine(trans.bottom, timeBreakdown.bottom, '#4caf50');
@@ -1824,7 +1860,7 @@ function showTimeBreakdown(timeBreakdown) {
       const dot = `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:50%;margin-right:8px;"></span>`;
       const li = document.createElement('li');
       li.style.marginBottom = '5px';
-      li.innerHTML = `${dot}${trans.ascent}: ${formatDurationHuman(Math.ceil(timeBreakdown.ascent))}`;
+      li.innerHTML = `${dot}${trans.ascent}: ${formatTimeHuman(timeBreakdown.ascent)}`;
       subList.appendChild(li);
     }
 
@@ -1837,7 +1873,9 @@ function showTimeBreakdown(timeBreakdown) {
         const dot = `<span style="display:inline-block;width:10px;height:10px;background:${color};border-radius:50%;margin-right:8px;"></span>`;
         const li = document.createElement('li');
         li.style.marginBottom = '5px';
-        li.innerHTML = `${dot}${trans.stopAt} ${d}m: ${formatDurationHuman(Math.ceil(timeBreakdown.stops[d]))}`;
+        li.innerHTML = `${dot}${trans.stopAt} ${formatDepth(Number(d))}m: ${formatTimeHuman(
+          timeBreakdown.stops[d]
+        )}`;
         subList.appendChild(li);
       });
     }

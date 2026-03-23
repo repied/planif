@@ -117,7 +117,7 @@ for (const gfLow of gfLows) {
 
           const result = Planning.calculateBuhlmannPlan(diveParams);
           const stops = result.profile.stops || {};
-          const dtr = Math.ceil(result.dtr);
+          const dtr = result.dtr;
 
           const stop3m = stops[3] || 0;
           const stop6m = stops[6] || 0;
