@@ -404,6 +404,7 @@
       function calcStats(values) {
         const n = values.length;
         const mean = values.reduce((a, b) => a + b, 0) / n;
+        const mae = values.reduce((a, b) => a + Math.abs(b), 0) / n;
         const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
         const std = Math.sqrt(variance);
         const sorted = [...values].sort((a, b) => a - b);
@@ -413,6 +414,7 @@
         return {
           n,
           mean,
+          mae,
           std,
           median,
           rmse,
@@ -433,7 +435,7 @@
         const statsEl = document.getElementById('statsGrid');
         const items = [
           ['N matched', st.n, ''],
-          ['Mean error', fmt(st.mean), 'min'],
+          ['Mean Abs Error', fmt(st.mae), 'min'],
           ['Std dev', fmt(st.std), 'min'],
           ['Median', fmt(st.median), 'min'],
           ['RMSE', fmt(st.rmse), 'min'],
