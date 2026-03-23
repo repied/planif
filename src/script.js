@@ -2506,6 +2506,7 @@ function openShareModal() {
     state.currentGFHigh,
     state.ppo2Max === 1.4 ? 0 : 1,
     state.surpenalisation === 'C60' ? 1 : state.surpenalisation === 'C120' ? 2 : 0,
+    state.reservePressureThreshold,
   ].join(',');
 
   const encoded = btoa(data);
@@ -2705,6 +2706,9 @@ function applyParams(params) {
         if (decoded.length >= 15) {
           const s = decoded[14];
           state.surpenalisation = s === '1' ? 'C60' : s === '2' ? 'C120' : 'OFF';
+        }
+        if (decoded.length >= 16) {
+          state.reservePressureThreshold = parseInt(decoded[15]);
         }
         changed = true;
         compactSuccess = true;
