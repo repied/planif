@@ -31,7 +31,7 @@ const state = {
 const el = {};
 
 // format
-const HIDE_SECONDS_IN_FORMAT = false; // Set to false to debug DTR and duration breakdown
+const HIDE_SECONDS_IN_FORMAT = true; // Set to false to debug DTR and duration breakdown
 
 // Constants
 const MAX_DEPTH = 65;
