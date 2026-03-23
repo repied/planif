@@ -14,8 +14,8 @@ Outil pédagogique. Les résultats présentés peuvent être faux. Utilisez un o
 - **Double tap** pour réinitialiser
 - **Cadenas** pour déverrouiller GFs
 - Basculer **ppO<sub>2</sub> max** entre 1.4 et 1.6 pour ajuster la profondeur maximale (MOD).
-- **Surpénalisation plongée successive** pour limiter le dégazage des compartiments rapides.
-- **Optimise** la durée qui permet de ne pas toucher à la réserve.
+- **Surpénaliser la seconde plongée** en limitant le dégazage des compartiments rapides.
+- **Viser** la durée qui permet de ne pas toucher à la réserve (tick orange sur la gauge de bloc).
 - **Partager :** une plongée par lien ou QR code
 - **Calculs :**
   - **DTR :** Durée Totale de Remontée

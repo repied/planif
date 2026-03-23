@@ -14,8 +14,8 @@ Educational tool. The results presented may be wrong. Use a certified dive compu
 - **Double tap** to reset
 - **Lock icon** to unlock GFs
 - Toggle **ppO<sub>2</sub> max** between 1.4 and 1.6 to adjust the Maximum Operating Depth (MOD).
-- **Successive dive penalization** to limit off-gassing of fast compartments.
-- **Optimise** duration to not use reserve.
+- **Over-penalize second dive** limiting off-gassing of fast compartments.
+- **Target** duration to not use reserve (orange tick on tank gauge).
 - **Share:** via link or QR code
 - **Calculations & Details:**
   - **TTS:** Time To Surface
