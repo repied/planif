@@ -2,9 +2,20 @@
 
 `Tables` is a free and open source [Progressive Web App](https://en.wikipedia.org/wiki/Progressive_web_app) for planning non-technical dives using either **French Navy MN90 tables** or **Bühlmann ZHL-16C with Gradient Factors**.
 
+## Screenshots
+
+| Desktop (MN90 mode)                                  | Desktop (GF mode)                                |
+| ---------------------------------------------------- | ------------------------------------------------ |
+| ![Desktop MN90](assets/screenshots/desktop-mn90.png) | ![Desktop GF](assets/screenshots/desktop-gf.png) |
+
+| Mobile (MN90 mode)                                 | Mobile (GF mode)                               |
+| -------------------------------------------------- | ---------------------------------------------- |
+| ![Mobile MN90](assets/screenshots/mobile-mn90.png) | ![Mobile GF](assets/screenshots/mobile-gf.png) |
+
 # Usage
 
 - Visit [https://repied.github.io/tables](https://repied.github.io/tables) to use or install the app.
+- See the [presentation page](./presentation.html) for a full feature overview with screenshots.
 - Set parameters for 2 successive dives.
 - The app computes plans and checks gaz usage.
 - Plans can be shared with QR code and link.
