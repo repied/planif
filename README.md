@@ -15,7 +15,7 @@
 # Usage
 
 - Visit [https://repied.github.io/tables](https://repied.github.io/tables) to use or install the app.
-- See the [presentation page](./presentation.html) for a full feature overview with screenshots.
+- See the [intro page](./intro.html) for a full feature overview with screenshots.
 - Set parameters for 2 successive dives.
 - The app computes plans and checks gaz usage.
 - Plans can be shared with QR code and link.

@@ -1,0 +1,1131 @@
+<!doctype html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="pageTitle">Tables — Planificateur de plongée</title>
+  <link rel="icon" type="image/png" href="./assets/favicon.png" />
+  <meta name="description" content="Tables – Free dive planning app using MN90 tables or Bühlmann GF algorithm." />
+  <style>
+    /* ── Variables ───────────────────────────────────────────────────────── */
+    :root {
+      --bg: #1e2130;
+      --card: rgba(43, 46, 66, 0.75);
+      --card-solid: #2b2e42;
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #ffffff;
+      --muted: #f0f2f8;
+      --title-accent: #00bcd4;
+      --accent: #e53935;
+      --accent2: #2196f3;
+      --green: #4caf50;
+      --radius: 20px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* ── Reset & Base ────────────────────────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--bg);
+      background-image: url('./assets/background-table-grey.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Utilities ───────────────────────────────────────────────────────── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(229, 57, 53, 0.2);
+      border: 1px solid rgba(229, 57, 53, 0.5);
+      color: #ff6b6b;
+      border-radius: 50px;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .badge.blue {
+      background: rgba(33, 150, 243, 0.2);
+      border-color: rgba(33, 150, 243, 0.5);
+      color: #64b5f6;
+    }
+
+    .badge.green {
+      background: rgba(76, 175, 80, 0.2);
+      border-color: rgba(76, 175, 80, 0.5);
+      color: #81c784;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    a {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    [data-lang] {
+      display: none;
+    }
+
+    [data-lang].active {
+      display: initial;
+    }
+
+    /* ── Language toggle ─────────────────────────────────────────────────── */
+    .lang-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+    }
+
+    .lang-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.35rem 0.9rem;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .lang-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .lang-btn img {
+      width: 20px;
+      height: 14px;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+
+    /* ── Hero ────────────────────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 4rem 1.5rem 5rem;
+    }
+
+    .hero-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      border-radius: 22px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 span {
+      color: var(--text);
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.35rem);
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 2rem;
+    }
+
+    .cta-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.8rem 2rem;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition:
+        transform 0.15s,
+        box-shadow 0.15s;
+      border: none;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(229, 57, 53, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+
+    /* ── Screenshot showcase ─────────────────────────────────────────────── */
+    .showcase {
+      padding: 1rem 0 5rem;
+    }
+
+    .showcase-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: var(--card);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.45rem 1.2rem;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .screenshot-panel {
+      display: none;
+    }
+
+    .screenshot-panel.active {
+      display: grid;
+    }
+
+    .screenshot-panel.desktop-panel {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .screenshot-panel.mobile-panel {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .screenshot-frame {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s;
+    }
+
+    .screenshot-frame:hover {
+      transform: translateY(-4px);
+    }
+
+    .screenshot-frame img {
+      width: 100%;
+    }
+
+    .screenshot-caption {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.6rem;
+    }
+
+    /* ── Section headings ────────────────────────────────────────────────── */
+    .section {
+      padding: 5rem 0;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+
+    .section-header .badge {
+      margin-bottom: 0.8rem;
+    }
+
+    .section-header h2 {
+      font-size: clamp(1.7rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .section-header p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-top: 0.75rem;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Feature grid ────────────────────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-icon {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    /* ── Split section (text + screenshot) ──────────────────────────────── */
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .split.reverse {
+      direction: rtl;
+    }
+
+    .split.reverse>* {
+      direction: ltr;
+    }
+
+    .split-text h2 {
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .split-text p {
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .split-text ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .split-text ul li {
+      color: var(--muted);
+      padding: 0.3rem 0 0.3rem 1.5rem;
+      position: relative;
+      font-size: 0.95rem;
+    }
+
+    .split-text ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    .split-image .screenshot-frame {
+      border-radius: 16px;
+    }
+
+    /* ── Install cards ───────────────────────────────────────────────────── */
+    .install-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .install-card {
+      background: var(--card-solid);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-top: 3px solid var(--accent2);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .install-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .install-card.highlight {
+      border-top-color: var(--green);
+    }
+
+    .install-card .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .install-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: #fff;
+    }
+
+    .install-card p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    /* ── Feature pills ───────────────────────────────────────────────────── */
+    .feature-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+    }
+
+    .feature-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--card-solid);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 50px;
+      padding: 0.45rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ── Mode comparison ─────────────────────────────────────────────────── */
+    .mode-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .mode-card {
+      background: var(--card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .mode-card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .mode-card-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .mode-card-body {
+      padding: 1.25rem 1.5rem;
+    }
+
+    .mode-card-body ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .mode-card-body ul li {
+      color: var(--muted);
+      padding: 0.3rem 0 0.3rem 1.4rem;
+      position: relative;
+      font-size: 0.92rem;
+    }
+
+    .mode-card-body ul li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--green);
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    footer a {
+      color: var(--muted);
+    }
+
+    footer .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Divider ─────────────────────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 1.5rem;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+
+      .split,
+      .split.reverse {
+        grid-template-columns: 1fr;
+        direction: ltr;
+      }
+
+      .mode-compare {
+        grid-template-columns: 1fr;
+      }
+
+      .screenshot-panel.mobile-panel {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+      }
+
+      .hero {
+        padding: 3rem 1rem 4rem;
+      }
+
+      .section {
+        padding: 3.5rem 0;
+      }
+    }
+
+    /* ── Animations ──────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate {
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .delay-1 {
+      animation-delay: 0.1s;
+    }
+
+    .delay-2 {
+      animation-delay: 0.2s;
+    }
+
+    .delay-3 {
+      animation-delay: 0.3s;
+    }
+
+    .delay-4 {
+      animation-delay: 0.4s;
+    }
+
+    /* ── Pulse ───────────────────────────────────────────────────────────── */
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 0 12px rgba(229, 57, 53, 0);
+      }
+    }
+
+    .btn-primary {
+      animation: pulse 2.5s infinite;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ── Language bar ─────────────────────────────────────────────────────── -->
+  <div class="lang-bar container">
+    <button class="lang-btn active" id="btn-fr" onclick="setLang('fr')">
+      <img src="./assets/fr-flag-800.png" alt="FR" /> Français
+    </button>
+    <button class="lang-btn" id="btn-en" onclick="setLang('en')">
+      <img src="./assets/uk-flag-800.png" alt="EN" /> English
+    </button>
+  </div>
+
+  <!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <img class="hero-icon animate" src="./assets/favicon.png" alt="Tables" />
+
+    <h1 class="animate delay-1">
+      <span data-lang="fr" class="active">Planifiez vos plongées</span>
+      <span data-lang="en">Plan your dives</span>
+      <br /><span>— <span style="color: var(--title-accent)">Tables</span> —</span>
+    </h1>
+
+    <p class="hero-tagline animate delay-2">
+      <span data-lang="fr" class="active">Application gratuite &amp; open‑source pour planifier 2 plongées consécutives.
+        Tables
+        MN90 ou algorithme de Bühlmann ZHL-16C avec Facteurs de Gradient.</span>
+      <span data-lang="en">Free &amp; open‑source app to plan 2 consecutive dives. MN90 navy tables or Bühlmann
+        ZHL-16C with Gradient Factors.</span>
+    </p>
+
+    <div class="cta-row animate delay-3">
+      <a href="https://repied.github.io/tables" class="btn btn-primary" target="_blank">
+        🤿
+        <span data-lang="fr" class="active">Ouvrir l'application</span>
+        <span data-lang="en">Open the app</span>
+      </a>
+      <a href="https://github.com/repied/tables" class="btn btn-secondary" target="_blank">
+        ⌨️ GitHub
+      </a>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── Feature list ─────────────────────────────────────────────────────── -->
+  <div class="container" style="padding-top: 2.5rem; padding-bottom: 0.5rem">
+    <div class="feature-list">
+      <span class="feature-pill">🌊 <span data-lang="fr" class="active">2 plongées consécutives</span><span
+          data-lang="en">2 successive dives</span></span>
+      <span class="feature-pill">📊 MN90 &amp; Bühlmann GF</span>
+      <span class="feature-pill">🛢️ <span data-lang="fr" class="active">Conso gaz &amp; réserve</span><span
+          data-lang="en">Gas consumption &amp; reserve</span></span>
+      <span class="feature-pill">⏱️ <span data-lang="fr" class="active">DTR détaillée</span><span
+          data-lang="en">Detailed TTS</span></span>
+      <span class="feature-pill">🎛️ <span data-lang="fr" class="active">Jauges interactives</span><span
+          data-lang="en">Interactive gauges</span></span>
+      <span class="feature-pill">🌡️ ppO₂ &amp; MOD</span>
+      <span class="feature-pill">🔗 <span data-lang="fr" class="active">Partage QR code</span><span data-lang="en">QR
+          code sharing</span></span>
+      <span class="feature-pill">📴 <span data-lang="fr" class="active">Hors ligne &amp; PWA</span><span
+          data-lang="en">Offline &amp; PWA</span></span>
+      <span class="feature-pill">🌍 FR / EN</span>
+      <span class="feature-pill">🆓 <span data-lang="fr" class="active">Gratuit &amp; open source</span><span
+          data-lang="en">Free &amp; open source</span></span>
+    </div>
+  </div>
+
+  <!-- ── Screenshots showcase ───────────────────────────────────────────────── -->
+  <section class="showcase section container">
+    <div class="section-header">
+      <span class="badge">
+        <span data-lang="fr" class="active">Aperçu</span>
+        <span data-lang="en">Preview</span>
+      </span>
+    </div>
+
+    <div class="showcase-tabs">
+      <button class="tab-btn active" onclick="showTab('desktop-mn90', this)">🖥️ MN90</button>
+      <button class="tab-btn" onclick="showTab('desktop-gf', this)">🖥️ GF</button>
+      <button class="tab-btn" onclick="showTab('mobile', this)">
+        📱
+        <span data-lang="fr" class="active">Mobile</span>
+        <span data-lang="en">Mobile</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('share', this)">
+        🔗
+        <span data-lang="fr" class="active">Partage</span>
+        <span data-lang="en">Share</span>
+      </button>
+      <button class="tab-btn" onclick="showTab('help', this)">
+        ❓
+        <span data-lang="fr" class="active">Aide</span>
+        <span data-lang="en">Help</span>
+      </button>
+    </div>
+
+    <!-- Desktop MN90 -->
+    <div class="screenshot-panel desktop-panel active" id="tab-desktop-mn90">
+      <div>
+        <div class="screenshot-frame">
+          <img src="./assets/screenshots/desktop-mn90.png" alt="Desktop MN90 view" />
+        </div>
+        <p class="screenshot-caption">
+          <span data-lang="fr" class="active">Vue bureau — mode Tables MN90 (tables officielles de la Marine
+            Nationale).</span>
+          <span data-lang="en">Desktop view — MN90 table mode (French Navy official tables).</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Desktop GF -->
+    <div class="screenshot-panel desktop-panel" id="tab-desktop-gf">
+      <div>
+        <div class="screenshot-frame">
+          <img src="./assets/screenshots/desktop-gf.png" alt="Desktop GF view" />
+        </div>
+        <p class="screenshot-caption">
+          <span data-lang="fr" class="active">Vue bureau — mode Gradient Factors avec paliers de décompression
+            Bühlmann.</span>
+          <span data-lang="en">Desktop view — Gradient Factors mode with Bühlmann decompression stops.</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Mobile -->
+    <div class="screenshot-panel mobile-panel" id="tab-mobile">
+      <div>
+        <div class="screenshot-frame">
+          <img src="./assets/screenshots/mobile-mn90.png" alt="Mobile MN90 view" />
+        </div>
+        <p class="screenshot-caption">📱 MN90</p>
+      </div>
+      <div>
+        <div class="screenshot-frame">
+          <img src="./assets/screenshots/mobile-gf.png" alt="Mobile GF view" />
+        </div>
+        <p class="screenshot-caption">📱 GF</p>
+      </div>
+    </div>
+
+    <!-- Share -->
+    <div class="screenshot-panel desktop-panel" id="tab-share">
+      <div>
+        <div class="screenshot-frame">
+          <img src="./assets/screenshots/desktop-share.png" alt="Share modal" />
+        </div>
+        <p class="screenshot-caption">
+          <span data-lang="fr" class="active">Partage d'un plan de plongée par lien ou QR code.</span>
+          <span data-lang="en">Share a dive plan via link or QR code.</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Help -->
+    <div class="screenshot-panel desktop-panel" id="tab-help">
+      <div>
+        <div class="screenshot-frame">
+          <img src="./assets/screenshots/desktop-help.png" alt="Help modal" />
+        </div>
+        <p class="screenshot-caption">
+          <span data-lang="fr" class="active">Aide contextuelle intégrée.</span>
+          <span data-lang="en">Built-in contextual help.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── Features grid ───────────────────────────────────────────────────────── -->
+  <section class="section container">
+    <div class="section-header">
+      <span class="badge blue">
+        <span data-lang="fr" class="active">Fonctionnalités</span>
+        <span data-lang="en">Features</span>
+      </span>
+      <h2>
+        <span data-lang="fr" class="active">Tout pour planifier vos plongées</span>
+        <span data-lang="en">Everything to plan your dives</span>
+      </h2>
+      <p>
+        <span data-lang="fr" class="active">Une interface intuitive qui couvre les besoins des plongeurs loisir.</span>
+        <span data-lang="en">An intuitive interface covering recreational divers' needs.</span>
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🌊</span>
+        <h3>
+          <span data-lang="fr" class="active">2 plongées consécutives</span>
+          <span data-lang="en">2 successive dives</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Planifiez une paire de plongées avec gestion de l'intervalle de surface et
+            majoration
+            automatique de la seconde plongée.</span>
+          <span data-lang="en">Plan a dive pair with surface interval management and automatic penalty for the
+            second dive.</span>
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🎛️</span>
+        <h3>
+          <span data-lang="fr" class="active">Jauges interactives</span>
+          <span data-lang="en">Interactive gauges</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Glissez haut/bas pour ajuster, tapez pour choisir, double-tapez pour
+            réinitialiser.
+            Toutes les valeurs sont modifiables en un geste.</span>
+          <span data-lang="en">Drag up/down to adjust, tap to pick, double-tap to reset. All values editable in one
+            gesture.</span>
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">📊</span>
+        <h3>MN90 &amp; Bühlmann GF</h3>
+        <p>
+          <span data-lang="fr" class="active">Choix entre les tables officielles MN90 de la Marine Nationale française
+            et
+            l'algorithme ZHL-16C avec Facteurs de Gradient personnalisables.</span>
+          <span data-lang="en">Choose between official French Navy MN90 tables and the Bühlmann ZHL-16C algorithm
+            with custom Gradient Factors.</span>
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🛢️</span>
+        <h3>
+          <span data-lang="fr" class="active">Gestion du bloc</span>
+          <span data-lang="en">Tank management</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Calcul de la pression de décollage et de fin de plongée. Alerte visuelle
+            si la
+            réserve est trop faible. Cible de durée pour préserver la réserve.</span>
+          <span data-lang="en">Calculates takeoff and end-of-dive pressure. Visual alert when reserve is low. Target
+            duration to preserve the reserve.</span>
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🔗</span>
+        <h3>
+          <span data-lang="fr" class="active">Partage de plan</span>
+          <span data-lang="en">Plan sharing</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Partagez votre plan de plongée avec un lien ou un QR code. Idéal pour
+            synchroniser
+            avec votre binôme.</span>
+          <span data-lang="en">Share your dive plan with a link or QR code. Perfect for syncing with your
+            buddy.</span>
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">📴</span>
+        <h3>
+          <span data-lang="fr" class="active">Hors ligne &amp; PWA</span>
+          <span data-lang="en">Offline &amp; PWA</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Installez l'application sur votre téléphone ou ordinateur. Fonctionne sans
+            connexion
+            internet — aucun Play Store ni App Store nécessaire.</span>
+          <span data-lang="en">Install on your phone or computer. Works offline — no Play Store or App Store
+            needed.</span>
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🌡️</span>
+        <h3>
+          <span data-lang="fr" class="active">Alerte ppO₂ &amp; MOD</span>
+          <span data-lang="en">ppO₂ &amp; MOD alert</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Arc orange sur la jauge de profondeur lorsque la profondeur dépasse la MOD
+            (profondeur maximale) pour la ppO₂ sélectionnée (1.4 ou 1.6).</span>
+          <span data-lang="en">Orange arc on the depth gauge when depth exceeds the MOD for the chosen ppO₂ limit
+            (1.4 or 1.6).</span>
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <span class="feature-icon">🌍</span>
+        <h3>
+          <span data-lang="fr" class="active">Français &amp; Anglais</span>
+          <span data-lang="en">French &amp; English</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Interface disponible en français et en anglais. Changement de langue
+            instantané.</span>
+          <span data-lang="en">Interface available in French and English. Instant language switch.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Split – GF detail ──────────────────────────────────────────────────── -->
+  <section class="section container">
+    <div class="split">
+      <div class="split-text">
+        <span class="badge blue" style="margin-bottom: 1rem; display: inline-block">
+          <span data-lang="fr" class="active">Mode Gradient Factors</span>
+          <span data-lang="en">Gradient Factors mode</span>
+        </span>
+        <h2>
+          <span data-lang="fr" class="active">Paliers de décompression visualisés</span>
+          <span data-lang="en">Visualised decompression stops</span>
+        </h2>
+        <p>
+          <span data-lang="fr" class="active">En mode GF, les paliers obligatoires sont affichés sous forme de graphique
+            proportionnel à la profondeur. Chaque arrêt est clairement visible avec sa
+            durée.</span>
+          <span data-lang="en">In GF mode, mandatory stops are displayed as a depth-proportional graph. Each stop is
+            clearly shown with its duration.</span>
+        </p>
+        <ul>
+          <li>
+            <span data-lang="fr" class="active">GF Bas et GF Haut réglables</span>
+            <span data-lang="en">Adjustable GF Low and GF High</span>
+          </li>
+          <li>
+            <span data-lang="fr" class="active">Azote résiduel pour plongées répétitives</span>
+            <span data-lang="en">Residual nitrogen for repetitive dives</span>
+          </li>
+          <li>
+            <span data-lang="fr" class="active">Ascension lente 10 m/min</span>
+            <span data-lang="en">Slow 10 m/min ascent rate</span>
+          </li>
+        </ul>
+      </div>
+      <div class="split-image">
+        <div class="screenshot-frame">
+          <img src="./assets/screenshots/desktop-gf.png" alt="GF mode with decompression stops" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── Installation ───────────────────────────────────────────────────────── -->
+  <section class="section container">
+    <div class="section-header">
+      <span class="badge green">
+        <span data-lang="fr" class="active">Installation</span>
+        <span data-lang="en">Installation</span>
+      </span>
+      <h2>
+        <span data-lang="fr" class="active">Disponible sur tous vos appareils</span>
+        <span data-lang="en">Available on all your devices</span>
+      </h2>
+      <p>
+        <span data-lang="fr" class="active">Installation directe depuis le navigateur — aucun app store requis.</span>
+        <span data-lang="en">Direct install from the browser — no app store required.</span>
+      </p>
+    </div>
+
+    <div class="install-grid">
+      <div class="install-card">
+        <div class="icon">🤖</div>
+        <h3>Android</h3>
+        <p>
+          <span data-lang="fr" class="active">Utilisez l'invite d'installation dans le navigateur ou l'icône « + » dans
+            la barre d'adresse.</span>
+          <span data-lang="en">Use the browser install prompt or the « + » icon in the address bar.</span>
+        </p>
+      </div>
+      <div class="install-card">
+        <div class="icon">🍎</div>
+        <h3>iOS (iPhone / iPad)</h3>
+        <p>
+          <span data-lang="fr" class="active">Dans Safari, appuyez sur Partager → « Sur l'écran d'accueil ».</span>
+          <span data-lang="en">In Safari, tap Share → « Add to Home Screen ».</span>
+        </p>
+      </div>
+      <div class="install-card">
+        <div class="icon">🖥️</div>
+        <h3>
+          <span data-lang="fr" class="active">Ordinateur</span>
+          <span data-lang="en">Desktop</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Chrome/Edge : utilisez l'icône d'installation dans la barre d'adresse ou
+            cliquez sur « Installer » dans l'application.</span>
+          <span data-lang="en">Chrome/Edge: use the install icon in the address bar or click « Install » inside the
+            app.</span>
+        </p>
+      </div>
+      <div class="install-card highlight">
+        <div class="icon">🔗</div>
+        <h3>
+          <span data-lang="fr" class="active">Partager par QR code</span>
+          <span data-lang="en">Share via QR code</span>
+        </h3>
+        <p>
+          <span data-lang="fr" class="active">Depuis l'application, générez un lien ou QR code contenant votre plan
+            complet. Votre binôme peut le scanner pour charger instantanément les mêmes paramètres.</span>
+          <span data-lang="en">From inside the app, generate a link or QR code containing your full plan. Your buddy
+            scans it to instantly load the same settings.</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ── Final CTA ──────────────────────────────────────────────────────────── -->
+  <section class="hero" style="padding: 4rem 1.5rem 5rem">
+    <h2 style="font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 800; margin-bottom: 1rem">
+      <span data-lang="fr" class="active">Prêt à plonger ?</span>
+      <span data-lang="en">Ready to dive?</span>
+    </h2>
+    <p class="hero-tagline">
+      <span data-lang="fr" class="active">Gratuit, open source, sans compte. Disponible dès maintenant.</span>
+      <span data-lang="en">Free, open source, no account needed. Available now.</span>
+    </p>
+    <div class="cta-row">
+      <a href="https://repied.github.io/tables" class="btn btn-primary" target="_blank">
+        🤿
+        <span data-lang="fr" class="active">Ouvrir l'application</span>
+        <span data-lang="en">Open the app</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-links">
+      <a href="https://repied.github.io/tables" target="_blank">
+        <span data-lang="fr" class="active">Application</span>
+        <span data-lang="en">App</span>
+      </a>
+      <a href="https://github.com/repied/tables" target="_blank">GitHub</a>
+      <a href="https://repied.github.io/tables/comp.html" target="_blank">
+        <span data-lang="fr" class="active">Comparaison subsurface</span>
+        <span data-lang="en">Subsurface comparison</span>
+      </a>
+    </div>
+    <p>
+      <span data-lang="fr" class="active">Application gratuite et open source. Utiliser un ordinateur de plongée
+        certifié.</span>
+      <span data-lang="en">Free and open source app. Always use a certified dive computer.</span>
+    </p>
+  </footer>
+
+  <script>
+    // ── Language management ─────────────────────────────────────────────────
+    function setLang(lang) {
+      document.querySelectorAll('[data-lang]').forEach((el) => {
+        el.classList.toggle('active', el.dataset.lang === lang);
+      });
+      document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.documentElement.lang = lang;
+      localStorage.setItem('pres-lang', lang);
+      // Update page title
+      document.title =
+        lang === 'fr' ? 'Tables — Planificateur de plongée' : 'Tables — Dive Planner';
+    }
+
+    // ── Screenshot tabs ─────────────────────────────────────────────────────
+    function showTab(id, btn) {
+      document.querySelectorAll('.screenshot-panel').forEach((p) => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // ── Init ────────────────────────────────────────────────────────────────
+    (function () {
+      const saved = localStorage.getItem('pres-lang');
+      const preferred = navigator.language.startsWith('fr') ? 'fr' : 'en';
+      setLang(saved || preferred);
+    })();
+  </script>
+</body>
+
+</html>
