@@ -333,7 +333,8 @@ function setupInteractions() {
     MIN_TANK_PRESSURE,
     MAX_TANK_PRESSURE,
     0.2,
-    DEFAULT_STATE.initTankPressure
+    DEFAULT_STATE.initTankPressure,
+    () => (state.reservePressureThreshold = DEFAULT_STATE.reservePressureThreshold)
   );
   setupGaugeInteraction(
     el['sac-gauge-container'],
@@ -651,7 +652,8 @@ function setupGaugeInteraction(
   min,
   max,
   sensitivity = 0.5,
-  defaultVal = null
+  defaultVal = null,
+  onDoubleReset = null
 ) {
   if (!gaugeElement) return;
 
@@ -697,6 +699,7 @@ function setupGaugeInteraction(
 
       // Reset to default
       setValue(effectiveDefault);
+      if (onDoubleReset) onDoubleReset();
       triggerUpdate();
 
       // Reset state
@@ -1134,6 +1137,16 @@ function setupPressureThresholdTick() {
     hitArea.setAttribute('style', 'touch-action: none;');
     tickGroup.appendChild(hitArea);
 
+    // Text value for reserve threshold
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.classList.add('tick-value');
+    text.setAttribute('fill', '#ffa500');
+    text.setAttribute('font-size', '10');
+    text.setAttribute('font-weight', 'bold');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'middle');
+    tickGroup.appendChild(text);
+
     setupPressureThresholdDrag(tickGroup, container);
   }
 
@@ -1152,6 +1165,17 @@ function setupPressureThresholdTick() {
     hitArea.setAttribute('cx', cx);
     hitArea.setAttribute('cy', cy);
   }
+
+  // Update text position and value
+  const text = tickGroup.querySelector('.tick-value');
+  if (text) {
+    const textRadius = GAUGE_RADIUS - 15;
+    const textX = GAUGE_CENTER_X + textRadius * Math.cos(angle);
+    const textY = GAUGE_CENTER_Y + textRadius * Math.sin(angle);
+    text.setAttribute('x', textX);
+    text.setAttribute('y', textY);
+    text.textContent = `${Math.round(threshold)}`;
+  }
 }
 
 function setupPressureThresholdDrag(tickGroup, gaugeContainer) {
@@ -1166,7 +1190,8 @@ function setupPressureThresholdDrag(tickGroup, gaugeContainer) {
 
     const currentTime = Date.now();
     if (currentTime - lastTapTime < 300 && currentTime - lastTapTime > 0) {
-      // Double tap: reset to default
+      // Double tap: reset both pressure and threshold to default
+      state.initTankPressure = DEFAULT_STATE.initTankPressure;
       state.reservePressureThreshold = DEFAULT_STATE.reservePressureThreshold;
       triggerUpdate();
       lastTapTime = 0;

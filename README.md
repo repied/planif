@@ -15,7 +15,7 @@
 # Usage
 
 - Visit [https://repied.github.io/tables](https://repied.github.io/tables) to use or install the app.
-- See the [presentation page](./presentation.html) for a full feature overview with screenshots.
+- See the [intro page](./intro.html) for a full feature overview with screenshots.
 - Set parameters for 2 successive dives.
 - The app computes plans and checks gaz usage.
 - Plans can be shared with QR code and link.
@@ -47,5 +47,10 @@
 
 Version number is the git hash to make sure updates invalidate cache.
 It's inserted in relevant places during CI.
+
+# Validation
+
+160k dive plans are compared with [subsurface outputs](https://github.com/subsurface/subsurface/compare/master...repied:subsurface:master)
+on [comp.html](./comp.html). The difference in TTS is around 1 minute on average for reasonable dives.
 
 [![Buy Me a Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=repied&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff)](https://www.buymeacoffee.com/repied)

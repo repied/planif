@@ -46,4 +46,5 @@ Direct installation from the browser (no PlayStore/AppStore) for offline usage.
 - Over-penalisation: [A. Foret](./data/Worldivers-Computers-Repetitive-FR.pdf)
 - Source: [code](https://github.com/repied/tables)
 - Contact: [pierreD](mailto:pierre.dangauthier+tables@gmail.com?subject=Tables%20app%20feedback)
-- Extra: [Checklist](#checklist), [plans vs subsurface](comp.html)
+- Validation [plans vs subsurface](comp.html)
+- Extra: [Checklist](#checklist), [introduction](intro.html)
