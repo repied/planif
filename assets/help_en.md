@@ -47,4 +47,4 @@ Direct installation from the browser (no PlayStore/AppStore) for offline usage.
 - Source: [code](https://github.com/repied/tables)
 - Contact: [pierreD](mailto:pierre.dangauthier+tables@gmail.com?subject=Tables%20app%20feedback)
 - Validation [plans vs subsurface](comp.html)
-- Extra: [Checklist](#checklist)
+- Extra: [Checklist](#checklist), [introduction](intro.html)
