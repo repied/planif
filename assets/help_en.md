@@ -40,7 +40,7 @@ Direct installation from the browser (no PlayStore/AppStore) for offline usage.
 
 ### References
 
-- Design inspired by [mn•90](https://oliviernemoz.wixsite.com/site/mn90)
+- Design inspired by [mn•90](https://oliviernemoz.wixsite.com/site/mn90) + Xavier Sterling
 - MN90 tables: [eppeplongee](https://eppeplongee.wordpress.com/2018/03/22/tables-mn-90/)
 - ZH-L16C parameters: [Subsurface](https://github.com/subsurface/subsurface/blob/dfd5e20d3d2b7105e89ded44222dc6f1631d2a39/core/deco.cpp#L86)
 - Over-penalisation: [A. Foret](./data/Worldivers-Computers-Repetitive-FR.pdf)
