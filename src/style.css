@@ -172,6 +172,12 @@ body.gf-mode .majoration-display {
   margin-top: 5px;
 }
 
+.gauge-wrapper.small .gauge-unit-small {
+  font-size: 0.7rem;
+  color: #ccc;
+  margin-top: 2px;
+}
+
 .gauge-ticks line {
   stroke-width: 2;
   stroke-linecap: round;
@@ -214,7 +220,7 @@ body.gf-mode .majoration-display {
 
 .gauge-label {
   margin-top: 10px;
-  font-size: 1rem;
+  font-size: 0.65rem;
   color: #fff;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(5px);
