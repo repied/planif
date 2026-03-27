@@ -849,7 +849,12 @@
       <div class="screenshot-panel desktop-panel active" id="tab-desktop-mn90">
         <div>
           <div class="screenshot-frame">
-            <img src="./assets/screenshots/desktop-mn90.png" alt="Desktop MN90 view" />
+            <img
+              src="./assets/screenshots/desktop-mn90.png"
+              data-src-fr="./assets/screenshots/desktop-mn90.png"
+              data-src-en="./assets/screenshots/desktop-mn90-en.png"
+              alt="Desktop MN90 view"
+            />
           </div>
           <p class="screenshot-caption">
             <span data-lang="fr" class="active"
@@ -864,7 +869,12 @@
       <div class="screenshot-panel desktop-panel" id="tab-desktop-gf">
         <div>
           <div class="screenshot-frame">
-            <img src="./assets/screenshots/desktop-gf.png" alt="Desktop GF view" />
+            <img
+              src="./assets/screenshots/desktop-gf.png"
+              data-src-fr="./assets/screenshots/desktop-gf.png"
+              data-src-en="./assets/screenshots/desktop-gf-en.png"
+              alt="Desktop GF view"
+            />
           </div>
           <p class="screenshot-caption">
             <span data-lang="fr" class="active"
@@ -879,13 +889,23 @@
       <div class="screenshot-panel mobile-panel" id="tab-mobile">
         <div>
           <div class="screenshot-frame">
-            <img src="./assets/screenshots/mobile-mn90.png" alt="Mobile MN90 view" />
+            <img
+              src="./assets/screenshots/mobile-mn90.png"
+              data-src-fr="./assets/screenshots/mobile-mn90.png"
+              data-src-en="./assets/screenshots/mobile-mn90-en.png"
+              alt="Mobile MN90 view"
+            />
           </div>
           <p class="screenshot-caption">MN90</p>
         </div>
         <div>
           <div class="screenshot-frame">
-            <img src="./assets/screenshots/mobile-gf.png" alt="Mobile GF view" />
+            <img
+              src="./assets/screenshots/mobile-gf.png"
+              data-src-fr="./assets/screenshots/mobile-gf.png"
+              data-src-en="./assets/screenshots/mobile-gf-en.png"
+              alt="Mobile GF view"
+            />
           </div>
           <p class="screenshot-caption">GF</p>
         </div>
@@ -897,6 +917,8 @@
           <div class="screenshot-frame">
             <img
               src="./assets/screenshots/desktop-share-modal.png"
+              data-src-fr="./assets/screenshots/desktop-share-modal.png"
+              data-src-en="./assets/screenshots/desktop-share-modal-en.png"
               alt="Share modal with QR code"
             />
           </div>
@@ -913,7 +935,12 @@
       <div class="screenshot-panel desktop-panel" id="tab-gas">
         <div>
           <div class="screenshot-frame">
-            <img src="./assets/screenshots/desktop-gas-breakdown.png" alt="Gas breakdown modal" />
+            <img
+              src="./assets/screenshots/desktop-gas-breakdown.png"
+              data-src-fr="./assets/screenshots/desktop-gas-breakdown.png"
+              data-src-en="./assets/screenshots/desktop-gas-breakdown-en.png"
+              alt="Gas breakdown modal"
+            />
           </div>
           <p class="screenshot-caption">
             <span data-lang="fr" class="active"
@@ -928,7 +955,12 @@
       <div class="screenshot-panel desktop-panel" id="tab-time">
         <div>
           <div class="screenshot-frame">
-            <img src="./assets/screenshots/desktop-time-breakdown.png" alt="Time breakdown modal" />
+            <img
+              src="./assets/screenshots/desktop-time-breakdown.png"
+              data-src-fr="./assets/screenshots/desktop-time-breakdown.png"
+              data-src-en="./assets/screenshots/desktop-time-breakdown-en.png"
+              alt="Time breakdown modal"
+            />
           </div>
           <p class="screenshot-caption">
             <span data-lang="fr" class="active"
@@ -945,6 +977,8 @@
           <div class="screenshot-frame">
             <img
               src="./assets/screenshots/desktop-penalisation.png"
+              data-src-fr="./assets/screenshots/desktop-penalisation.png"
+              data-src-en="./assets/screenshots/desktop-penalisation-en.png"
               alt="Over-penalisation modal"
             />
           </div>
@@ -964,7 +998,12 @@
       <div class="screenshot-panel desktop-panel" id="tab-dark">
         <div>
           <div class="screenshot-frame">
-            <img src="./assets/screenshots/desktop-dark.png" alt="Desktop dark mode view" />
+            <img
+              src="./assets/screenshots/desktop-dark.png"
+              data-src-fr="./assets/screenshots/desktop-dark.png"
+              data-src-en="./assets/screenshots/desktop-dark-en.png"
+              alt="Desktop dark mode view"
+            />
           </div>
           <p class="screenshot-caption">
             <span data-lang="fr" class="active">Thème sombre disponible sur tous les modes.</span>
@@ -1381,6 +1420,11 @@
         // Update page title
         document.title =
           lang === 'fr' ? 'Tables — Planificateur de plongée' : 'Tables — Dive Planner';
+        // Swap screenshot images based on language
+        document.querySelectorAll('img[data-src-fr]').forEach((img) => {
+          const src = lang === 'fr' ? img.dataset.srcFr : img.dataset.srcEn;
+          if (src) img.src = src;
+        });
       }
 
       // ── Screenshot tabs ─────────────────────────────────────────────────────
