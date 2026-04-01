@@ -28,8 +28,8 @@
 - **iOS**: In browser, tap Share -> "Add to Home Screen".
 
 # References
-
-- Design copied from [mn•90](https://oliviernemoz.wixsite.com/site/mn90)
+- Designed with Xavier Sterlin
+- Gauges design copied from [mn•90](https://oliviernemoz.wixsite.com/site/mn90)
 - MN90 tables: [eppeplongee](https://eppeplongee.wordpress.com/2018/03/22/tables-mn-90/)
 - ZH-L16C parameters: [Wikipedia](https://en.wikipedia.org/wiki/B%C3%BChlmann_decompression_algorithm) and [Subsurface](https://github.com/subsurface)
 - Scaffolding and UX with [Gemini 3 Pro/Fast](https://blog.google/products-and-platforms/products/gemini/gemini-3/), dive calculations manually written, reviewed and tested.
