@@ -28,6 +28,7 @@
 - **iOS**: In browser, tap Share -> "Add to Home Screen".
 
 # References
+
 - Designed with Xavier Sterlin
 - Gauges design copied from [mn•90](https://oliviernemoz.wixsite.com/site/mn90)
 - MN90 tables: [eppeplongee](https://eppeplongee.wordpress.com/2018/03/22/tables-mn-90/)
