@@ -33,6 +33,7 @@ const el = {};
 
 // format
 const CEIL_SECONDS_IN_FORMAT = false; // Set to false to debug DTR and duration breakdown
+const VARIABLE_RESERVE_THRESHOLD = false; // Set to true to allow changing the reserve threshold
 
 // Constants
 const MAX_DEPTH = 65;
@@ -334,7 +335,10 @@ function setupInteractions() {
     MAX_TANK_PRESSURE,
     0.2,
     DEFAULT_STATE.initTankPressure,
-    () => (state.reservePressureThreshold = DEFAULT_STATE.reservePressureThreshold)
+    () => {
+      if (VARIABLE_RESERVE_THRESHOLD)
+        state.reservePressureThreshold = DEFAULT_STATE.reservePressureThreshold;
+    }
   );
   setupGaugeInteraction(
     el['sac-gauge-container'],
@@ -1127,15 +1131,17 @@ function setupPressureThresholdTick() {
     line.setAttribute('stroke-linecap', 'round');
     tickGroup.appendChild(line);
 
-    // Transparent hit area for easier grabbing
-    const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    hitArea.classList.add('tick-hit');
-    hitArea.setAttribute('r', '8');
-    hitArea.setAttribute('fill', 'transparent');
-    hitArea.setAttribute('stroke', 'none');
-    hitArea.setAttribute('cursor', 'ns-resize');
-    hitArea.setAttribute('style', 'touch-action: none;');
-    tickGroup.appendChild(hitArea);
+    if (VARIABLE_RESERVE_THRESHOLD) {
+      // Transparent hit area for easier grabbing
+      const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      hitArea.classList.add('tick-hit');
+      hitArea.setAttribute('r', '8');
+      hitArea.setAttribute('fill', 'transparent');
+      hitArea.setAttribute('stroke', 'none');
+      hitArea.setAttribute('cursor', 'ns-resize');
+      hitArea.setAttribute('style', 'touch-action: none;');
+      tickGroup.appendChild(hitArea);
+    }
 
     // Text value for reserve threshold
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -1147,7 +1153,9 @@ function setupPressureThresholdTick() {
     text.setAttribute('dominant-baseline', 'middle');
     tickGroup.appendChild(text);
 
-    setupPressureThresholdDrag(tickGroup, container);
+    if (VARIABLE_RESERVE_THRESHOLD) {
+      setupPressureThresholdDrag(tickGroup, container);
+    }
   }
 
   // Update tick position
@@ -1158,12 +1166,15 @@ function setupPressureThresholdTick() {
     line.setAttribute('x2', x2);
     line.setAttribute('y2', y2);
   }
-  const hitArea = tickGroup.querySelector('.tick-hit');
-  if (hitArea) {
-    const cx = GAUGE_CENTER_X + GAUGE_RADIUS * Math.cos(angle);
-    const cy = GAUGE_CENTER_Y + GAUGE_RADIUS * Math.sin(angle);
-    hitArea.setAttribute('cx', cx);
-    hitArea.setAttribute('cy', cy);
+
+  if (VARIABLE_RESERVE_THRESHOLD) {
+    const hitArea = tickGroup.querySelector('.tick-hit');
+    if (hitArea) {
+      const cx = GAUGE_CENTER_X + GAUGE_RADIUS * Math.cos(angle);
+      const cy = GAUGE_CENTER_Y + GAUGE_RADIUS * Math.sin(angle);
+      hitArea.setAttribute('cx', cx);
+      hitArea.setAttribute('cy', cy);
+    }
   }
 
   // Update text position and value
@@ -2734,7 +2745,12 @@ function applyParams(params) {
         }
         if (decoded.length >= 16) {
           const rpt = parseInt(decoded[15], 10);
-          if (!isNaN(rpt)) state.reservePressureThreshold = rpt;
+          if (!isNaN(rpt))
+            state.reservePressureThreshold = VARIABLE_RESERVE_THRESHOLD
+              ? rpt
+              : DEFAULT_STATE.reservePressureThreshold;
+        } else if (!VARIABLE_RESERVE_THRESHOLD) {
+          state.reservePressureThreshold = DEFAULT_STATE.reservePressureThreshold;
         }
         changed = true;
         compactSuccess = true;
@@ -2838,7 +2854,11 @@ function loadStateFromLocalStorage() {
     ];
     keys.forEach((key) => {
       if (parsed[key] !== undefined) {
-        state[key] = parsed[key];
+        if (key === 'reservePressureThreshold' && !VARIABLE_RESERVE_THRESHOLD) {
+          state[key] = DEFAULT_STATE.reservePressureThreshold;
+        } else {
+          state[key] = parsed[key];
+        }
       }
     });
   } catch (e) {
