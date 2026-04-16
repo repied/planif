@@ -1,6 +1,6 @@
 {
-  "name": "Tables - Dive Planner",
-  "short_name": "Tables",
+  "name": "Planif - Dive Planner",
+  "short_name": "Planif",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1e2130",

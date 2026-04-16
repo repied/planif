@@ -45,6 +45,6 @@ Direct installation from the browser (no PlayStore/AppStore) for offline usage.
 - ZH-L16C parameters: [Subsurface](https://github.com/subsurface/subsurface/blob/dfd5e20d3d2b7105e89ded44222dc6f1631d2a39/core/deco.cpp#L86)
 - Over-penalisation: [A. Foret](./data/Worldivers-Computers-Repetitive-FR.pdf)
 - Source: [code](https://github.com/repied/tables)
-- Contact: [pierreD](mailto:pierre.dangauthier+tables@gmail.com?subject=Tables%20app%20feedback)
+- Contact: [pierreD](mailto:pierre.dangauthier+tables@gmail.com?subject=Planif%20app%20feedback)
 - Validation [plans vs subsurface](comp.html)
 - Extra: [Checklist](#checklist), [introduction](intro.html)
