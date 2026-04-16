@@ -5,6 +5,7 @@ github
 Icone
 linspace
 Palv
+Planif
 simul
 succ
 surpenalisation

@@ -1,6 +1,6 @@
-# Tables
+# Planif
 
-`Tables` is a free and open source [Progressive Web App](https://en.wikipedia.org/wiki/Progressive_web_app) for planning non-technical dives using either **French Navy MN90 tables** or **Bühlmann ZHL-16C with Gradient Factors**.
+`Planif` is a free and open source [Progressive Web App](https://en.wikipedia.org/wiki/Progressive_web_app) for planning non-technical dives using either **French Navy MN90 tables** or **Bühlmann ZHL-16C with Gradient Factors**.
 
 ## Screenshots
 
@@ -22,7 +22,7 @@
 
 # Installation
 
-`Tables` can be installed on mobile/laptop/desktop and used offline. Direct installation from the browsers (no PlayStore, no AppStore).
+`Planif` can be installed on mobile/laptop/desktop and used offline. Direct installation from the browsers (no PlayStore, no AppStore).
 
 - **Android/Desktop**: Use the install button in app, or the install prompt or "+" icon in the address bar.
 - **iOS**: In browser, tap Share -> "Add to Home Screen".

@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title data-i18n="pageTitle">Tables — Planificateur de plongée</title>
+    <title data-i18n="pageTitle">Planif : Planificateur de plongée</title>
     <link rel="icon" type="image/png" href="./assets/favicon.png" />
     <meta
       name="description"
-      content="Tables – Free dive planning app using MN90 tables or Bühlmann GF algorithm."
+      content="Planif:  Free dive planning app using MN90 tables or Bühlmann GF algorithm."
     />
     <style>
       /* ── Variables ───────────────────────────────────────────────────────── */
@@ -712,10 +712,10 @@
 
     <!-- ── Hero ─────────────────────────────────────────────────────────────── -->
     <section class="hero">
-      <img class="hero-icon animate" src="./assets/favicon.png" alt="Tables" />
+      <img class="hero-icon animate" src="./assets/favicon.png" alt="Planif" />
 
       <h1 class="animate delay-1">
-        <span> <span style="color: var(--title-accent)">Tables</span> </span>
+        <span> <span style="color: var(--title-accent)">Planif</span> </span>
         <br /><span data-lang="fr" class="active">Planifiez vos plongées</span>
         <span data-lang="en">Plan your dives</span>
       </h1>
@@ -1167,10 +1167,10 @@
           <p>
             <span data-lang="fr" class="active"
               >Installez l'application sur votre téléphone ou ordinateur. Fonctionne sans connexion
-              internet — aucun Play Store ni App Store nécessaire.</span
+              internet : aucun Play Store ni App Store nécessaire.</span
             >
             <span data-lang="en"
-              >Install on your phone or computer. Works offline — no Play Store or App Store
+              >Install on your phone or computer. Works offline : no Play Store or App Store
               needed.</span
             >
           </p>
@@ -1224,7 +1224,7 @@
               <a href="./comp.html" target="_blank"
                 >16000 plans de plongée sont comparés avec Subsurface</a
               >
-              — écart moyen sur le DTR inférieur à 1 minute.</span
+              : écart moyen sur le DTR inférieur à 1 minute.</span
             >
             <span data-lang="en"
               >The Bühlmann ZHL-16C algorithm was manually written and carefully verified.
@@ -1419,7 +1419,7 @@
         localStorage.setItem('pres-lang', lang);
         // Update page title
         document.title =
-          lang === 'fr' ? 'Tables — Planificateur de plongée' : 'Tables — Dive Planner';
+          lang === 'fr' ? 'Planif : Planificateur de plongée' : 'Planif: Dive Planner';
         // Swap screenshot images based on language
         document.querySelectorAll('img[data-src-fr]').forEach((img) => {
           const src = lang === 'fr' ? img.dataset.srcFr : img.dataset.srcEn;

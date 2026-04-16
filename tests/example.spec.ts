@@ -8,7 +8,7 @@ test('app loads and shows main elements', async ({ page }) => {
   await page.goto('/');
 
   // Check title
-  await expect(page).toHaveTitle(/Tables/);
+  await expect(page).toHaveTitle(/Planif/);
 
   // Check Gauges
   await expect(page.locator('#pressure-gauge-container')).toBeVisible();

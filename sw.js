@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tables-cache-v{{APP_VERSION}}';
+const CACHE_NAME = 'planif-cache-v{{APP_VERSION}}';
 const urlsToCache = [
   './',
   './index.html',

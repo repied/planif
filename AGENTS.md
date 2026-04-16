@@ -1,4 +1,4 @@
-# Coding agents instructions for repo `tables`
+# Coding agents instructions for repo `Planif`
 
 First read `./README.md` file. Remember that your are most likely developing in a devcontainer.
 
