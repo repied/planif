@@ -45,7 +45,7 @@ Installation directe depuis le navigateur (pas de PlayStore/AppStore) pour utili
 - Tables MN90 : [eppeplongee](https://eppeplongee.wordpress.com/2018/03/22/tables-mn-90/)
 - Paramètres ZH-L16C : [Subsurface](https://github.com/subsurface/subsurface/blob/dfd5e20d3d2b7105e89ded44222dc6f1631d2a39/core/deco.cpp#L86)
 - Surpénalisation : [A. Foret](./data/Worldivers-Computers-Repetitive-FR.pdf)
-- Code : [source](https://github.com/repied/tables)
+- Code : [source](https://github.com/repied/planif)
 - Contact : [pierreD](mailto:pierre.dangauthier+tables@gmail.com?subject=Planif%20app%20feedback)
 - Validation : [plans vs subsurface](comp.html)
 - Extra : [Checklist](#checklist), [introduction](intro.html)

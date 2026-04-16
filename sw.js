@@ -1,4 +1,4 @@
-const CACHE_NAME = 'planif-cache-vce02a40';
+const CACHE_NAME = 'planif-cache-v203a6cf';
 const urlsToCache = [
   './',
   './index.html',
