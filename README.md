@@ -14,7 +14,7 @@
 
 # Usage
 
-- Visit [https://repied.github.io/tables](https://repied.github.io/tables) to use or install the app.
+- Visit [https://repied.github.io/planif](https://repied.github.io/planif) to use or install the app.
 - See the [intro page](./intro.html) for a full feature overview with screenshots.
 - Set parameters for 2 successive dives.
 - The app computes plans and checks gaz usage.
@@ -44,7 +44,7 @@
 
 # Deployments
 
-- To deploy to users, push to `main` branch to test in CI and deploy to [https://repied.github.io/tables](https://repied.github.io/tables/)
+- To deploy to users, push to `main` branch to test in CI and deploy to [https://repied.github.io/planif](https://repied.github.io/planif/)
 
 Version number is the git hash to make sure updates invalidate cache.
 It's inserted in relevant places during CI.
