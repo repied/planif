@@ -2,6 +2,9 @@
 
 `Planif` is a free and open source [Progressive Web App](https://en.wikipedia.org/wiki/Progressive_web_app) for planning non-technical dives using either **French Navy MN90 tables** or **Bühlmann ZHL-16C with Gradient Factors**.
 
+## Features
+See [https://planif.plongee.app/intro.html]
+
 ## Screenshots
 
 | Desktop (MN90 mode)                                  | Desktop (GF mode)                                |
@@ -11,6 +14,7 @@
 | Mobile (MN90 mode)                                 | Mobile (GF mode)                               |
 | -------------------------------------------------- | ---------------------------------------------- |
 | ![Mobile MN90](assets/screenshots/mobile-mn90.png) | ![Mobile GF](assets/screenshots/mobile-gf.png) |
+
 
 # Usage
 
