@@ -74,7 +74,7 @@ window.translations = {
     scanStatusWaiting: 'En attente de scan...',
     cancel: 'Annuler',
     cameraError: "Erreur d'accès à la caméra",
-    surpenalisation: 'Pénalisation',
+    surpenalisation: 'Surpénalisation',
   },
   en: {
     firstDive: 'First dive',
@@ -151,6 +151,6 @@ window.translations = {
     scanStatusWaiting: 'Waiting for scan...',
     cancel: 'Cancel',
     cameraError: 'Camera Access Error',
-    surpenalisation: 'Penalisation',
+    surpenalisation: 'Over-penalisation',
   },
 };
