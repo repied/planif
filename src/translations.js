@@ -151,6 +151,6 @@ window.translations = {
     scanStatusWaiting: 'Waiting for scan...',
     cancel: 'Cancel',
     cameraError: 'Camera Access Error',
-    surpenalisation: 'Over-penalisation',
+    surpenalisation: 'Overpenalisation',
   },
 };
