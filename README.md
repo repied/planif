@@ -15,7 +15,6 @@ See https://planif.plongee.app/intro.html
 | -------------------------------------------------- | ---------------------------------------------- |
 | ![Mobile MN90](assets/screenshots/mobile-mn90.png) | ![Mobile GF](assets/screenshots/mobile-gf.png) |
 
-
 # Usage
 
 - Visit [https://repied.github.io/planif](https://repied.github.io/planif) to use or install the app.
